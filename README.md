@@ -1,415 +1,236 @@
-# Small Business Survival & Support Policy Simulation: Project Plan
+# Business survival & support policy simulation — project report
 
-## Applying the Stochadex to Business Support Intervention Optimisation
+**Stack:** [stochadex](https://github.com/umbralcalc/stochadex) · Go · ONS business demography · Companies House bulk data · NOMIS / Bank of England panels
 
----
-
-## Overview
-
-Build a stochastic simulation of small business lifecycle dynamics — formation, growth, distress, and failure — learned from freely available Companies House, ONS business demography, and economic data, with a decision science layer to evaluate and compare business support interventions in terms of their impact on survival probabilities, employment, and local economic resilience.
-
-The core question: **given the current economic conditions and business population in a region, which combination of support interventions (rate relief, grants, incubator programmes, mentoring) produces the greatest improvement in small business survival and employment growth over 5–10 years, and for which sectors and business types?**
+This repository is a **stochastic simulation and decision layer** for local business demography: birth–age–death dynamics calibrated to open UK data, with **literature-informed support portfolios** compared under **macro scenarios**. This document is the **project report** for collaborators and readers reinstantiating the work.
 
 ---
 
-## Why This Problem
+## Executive summary
 
-- The UK had approximately 2.9 million VAT/PAYE registered businesses on the Inter-Departmental Business Register (IDBR). Hundreds of thousands are born and die each year — in 2020 alone, 358,000 births and 316,000 deaths.
-- Small business failure is inherently stochastic — survival depends on sector, location, economic cycle, access to finance, founder characteristics, and luck. Yet policy interventions are evaluated almost entirely with deterministic before/after comparisons or simple regression.
-- Enterprise Zones, the flagship place-based business support policy, have been evaluated by the Centre for Cities and found to have created jobs at a cost of approximately £28,540 per job — but with major questions about displacement (did businesses just move from nearby?) and additionality (would they have formed anyway?). These are fundamentally counterfactual questions.
-- The government is actively rethinking business rates policy — a Call for Evidence was published in late 2025 on how business rates influence investment decisions, and Small Business Rates Relief currently provides 100% relief for properties with rateable values under £12,000. Whether these reliefs actually improve survival is empirically unresolved.
-- Almost nobody models business demography stochastically. The data is surprisingly rich — Companies House publishes incorporation and dissolution data for every UK company, and ONS publishes survival curves by sector, region, and cohort — but it's treated as descriptive statistics, not as a dynamical system to simulate and intervene on.
+We connect **ONS survival curves**, **per-LA monthly formation** (from the Companies House live register and NSPL postcode geography), and **economic covariates** (Bank Rate, claimant count) into a **monthly Leslie-style model** (`SingleLAPopulationIteration`) with optional **Sequential Monte Carlo (SMC)** calibration via stochadex **`pkg/analysis`**. A **policy layer** encodes several intervention bundles as multipliers on births and hazards; **`cmd/evaluate`** runs Monte Carlo over portfolios × scenarios and writes JSON; **`cmd/evalplot`** turns that into interactive HTML charts.
 
----
+**Illustrative result (Kingston upon Hull, `E06000010`):** under a 120‑month run with 64 replications, a **rates & cash-flow relief** bundle and a **blended** bundle raise the model’s **five-year cohort survival** by about **four percentage points** versus baseline (baseline ~37.4% vs relief ~41.4% in the baseline macro path; see §5). **Startup-style** tilts raise **stock** more than **pure survival**, as encoded. These numbers are **ranking and stress-test instruments**, not departmental forecasts (see caveats).
 
-## The Gap This Fills
-
-| Approach | Examples | Limitation |
-|----------|----------|------------|
-| Descriptive business demography | ONS Business Demography bulletins | Reports birth/death rates and survival curves but doesn't model dynamics or evaluate interventions |
-| Programme evaluation (quasi-experimental) | Centre for Cities Enterprise Zone evaluation, UEZ evaluation | Estimates average treatment effects but can't simulate alternative policy designs or predict outcomes in new contexts |
-| Econometric survival analysis | Academic Cox proportional hazards models of firm failure | Static: estimates hazard ratios from historical data, doesn't simulate forward under policy counterfactuals |
-| Agent-based business models | Academic models of firm ecosystems | Theoretically rich but rarely calibrated to real registration data at scale |
-
-**The stochadex differentiator:** a stochastic simulation of the full business lifecycle — birth, growth, distress, death — learned from millions of Companies House records and ONS demography data, with a decision science layer that evaluates support interventions by simulating their effect on transition probabilities. Same proven pattern: ingest freely available data, build a simulation that learns from it, optimise policy actions.
+**How far that goes toward the original research question:** we can now answer the **portfolio ranking** part for **modelled survival and register stock** in one LA and three stylised macro paths; we **cannot** yet answer **employment**, **cost–benefit**, **displacement magnitude**, or **“which sectors win”** as separate reportable outcomes—§1 and §5.4 spell that out, and §6 lists the extensions needed.
 
 ---
 
-## Phase 1: Data Ingestion
+## 1. Purpose and research question
 
-### 1.1 Company registration data
+Small-business demography is stochastic and policy-relevant—rates relief, grants, zones, mentoring—but most evidence is **before/after or regression**, not **forward simulation under interventions**.
 
-**Source: Companies House Free Company Data Product**
+The **full question** this project was set up to support:
 
-- Bulk CSV snapshot of all live companies on the register
-- Fields: company number, name, incorporation date, dissolution date, company status, company category, registered office address (including postcode), up to 4 SIC codes, accounts category, confirmation statement date, previous names
-- Updated monthly (end of previous month, available within 5 working days)
-- Free download, no registration required
+> *Given **current economic conditions** and the **business population in a region**, which **combination of support interventions** (rate relief, grants, incubators, mentoring, **etc.**) yields the **greatest improvement in survival and employment-related outcomes over 5–10 years**, **for which sectors and business types**, and **how robust** is that under **recession vs expansion**, **displacement**, and **value for money**?*
 
-**Download:** `download.companieshouse.gov.uk/en_output.html`
+The implementation deliberately uses **freely available** UK statistics and bulk registration data so the pipeline can be **replayed and audited**. The **narrower operational question** the running code answers **today** is:
 
-**Source: Companies House Accounts Data Product**
+> *For a chosen LA, which **encoded portfolio** improves **modelled 5‑year cohort survival** and/or **mean simulated stock** most, and does that **ranking** hold under **baseline / recession / expansion** covariate paths?*
 
-- Individual company accounts filed electronically, in XBRL format
-- Daily and monthly bulk downloads
-- Contains financial data (turnover, profit/loss, assets, liabilities, employee count) for companies that file detailed accounts
-- Free download
-
-**Source: Companies House API**
-
-- RESTful API for individual company lookups, officer searches, filing history
-- Free with registration (API key)
-- Useful for enriching bulk data with filing history and officer details
-
-### 1.2 Business demography data
-
-**Source: ONS Business Demography**
-
-- Annual publication: births, deaths, survivals, and active stock of UK enterprises
-- Breakdowns by SIC 2007 industry group, region, local authority
-- Survival rates tracked for up to 5 years after birth by cohort
-- Employer vs. non-employer business demography
-- High-growth business identification (>20% employment growth per annum over 3 years)
-- Based on the Inter-Departmental Business Register (IDBR) — all businesses registered for VAT and/or PAYE
-- Free download from ONS
-
-**Key datasets:**
-- Business demography reference table (births, deaths, active, survival by LA and SIC)
-- Employer business demography (subset with ≥1 employee)
-- Multiple business registrations at a single postcode (data quality flag)
-
-### 1.3 Economic context data
-
-**Source: ONS / NOMIS Labour Market Statistics**
-
-- Employment rate, claimant count, job vacancies by travel-to-work area and local authority
-- Sector composition of local employment
-- Quarterly and monthly
-- The demand-side driver of business survival
-
-**Source: Bank of England**
-
-- Bank Rate, business lending data, credit conditions survey
-- Interest rates and credit availability directly affect small business survival — rate rises increase debt service costs and reduce consumer spending
-
-**Source: ONS Regional GDP and GVA**
-
-- Gross Value Added by local authority and industry
-- The output-side context for business formation and growth
-
-### 1.4 Business support intervention data
-
-**Source: VOA Non-Domestic Rating (Business Rates)**
-
-- Rateable values and relief data by local authority
-- Small Business Rates Relief coverage
-- Enterprise Zone rate relief uptake
-
-**Source: MHCLG / DLUHC Enterprise Zone Data**
-
-- Employment and business counts in Enterprise Zones
-- Rate relief and capital allowances distributed
-- Published in evaluation reports and live tables
-
-**Source: British Business Bank**
-
-- Data on government-backed lending schemes (Start Up Loans, CBILS, Recovery Loan Scheme)
-- Regional breakdowns of lending volumes
-- Published in annual reports and data releases
-
-**Source: BEIS / DBT Business Support Evaluations**
-
-- Published evaluations of programmes: GrowthAccelerator, Start Up Loans, Innovate UK grants, University Enterprise Zones
-- Contain estimated effect sizes (survival, employment, GVA impacts) that can serve as prior distributions for the stochadex
-
-### 1.5 Initial data scope
-
-- **Geography:** 10–20 local authorities spanning different economic contexts — e.g., a high-startup-rate London borough (Tower Hamlets), a Northern industrial town (Burnley), a university city (Cambridge), an Enterprise Zone host (Sheffield, Humber), a rural area (Cornwall)
-- **Time window:** Companies House data from 2000–2025 for lifecycle analysis; ONS demography from 2009–2024
-- **Sectors:** Focus on sectors with high birth/death rates: professional services (SIC 69–74), retail (SIC 47), hospitality (SIC 55–56), construction (SIC 41–43), technology (SIC 62–63)
-- **Resolution:** Monthly for incorporation/dissolution events, annual for ONS demography and survival curves, quarterly for economic context
+Everything else in the **full** question is **future work** (see §6) unless noted below.
 
 ---
 
-## Phase 2: Model Structure
+## 2. What we built
 
-### 2.1 State variables
+| Piece | Role |
+|--------|------|
+| `pkg/population` | Monthly multi-sector Leslie; ONS-linked hazards; economic & policy multipliers; `RunToState` harness; SMC helper iterations (`ScaledCohortSurvivalIteration`, `PopulationSurvivalBirthMomentsIteration`). |
+| `pkg/calibrate` | Panel FD regression, COVID/national birth patterns, hazard scaling, **SMC** (`RunSMCHazardScaleCalibration`, `RunSMCPopulationMomentsCalibration`), panel→elasticity mapping. |
+| `pkg/lifecycle` | CH row parsing, SIC→sector, age histograms. |
+| `pkg/policy` | Portfolios, literature priors table, scenarios (baseline / recession / expansion). |
+| `pkg/geo` | Target LAs, adjacency sketch for displacement, birth-rate helpers. |
+| `pkg/evaluate` | `Run(Config)` — Monte Carlo evaluation engine. |
+| `cmd/parse-ons`, `cmd/explore`, `cmd/analyse` | Build `dat/ons_demography.json`, `dat/la_births.json`, `dat/la_panel.json`. |
+| `cmd/lifecycles` | CH → JSON age histograms by LA/sector. |
+| `cmd/evaluate`, `cmd/evalplot`, `cmd/smcinfer` | Policy runs, charts, SMC CLI. |
+| `CLAUDE.md` | Contributor notes for stochadex iteration patterns and YAML. |
 
-The stochadex simulation tracks a regional business population as a coupled stochastic system:
+---
 
-1. **Business birth process** — stochastic, driven by economic conditions (GDP growth, employment, credit availability), local entrepreneurial culture, and sector-specific factors. New businesses enter with characteristics (sector, size, location).
-2. **Growth/stasis process** — stochastic transitions between size bands (micro → small → medium), with transition rates depending on sector, age, economic conditions, and access to support.
-3. **Distress process** — stochastic entry into financial difficulty (late filing, dormancy, CCJ), with rates depending on economic shocks, sector conditions, interest rates, and business characteristics.
-4. **Death process** — stochastic dissolution/liquidation, with hazard rates depending on age (strong age-dependence in first 3 years), sector, economic conditions, and whether support interventions have been received.
-5. **Employment process** — stochastic headcount evolution within surviving businesses, the key output metric alongside survival.
+## 3. Methods (concise)
 
-### 2.2 Simulation diagram
+- **Demography:** Businesses live in **sector × age (month) buckets** (60 months + top bucket). Hazards derive from **ONS cumulative survival** (years 1–5); sector **relative** hazards follow a literature-style table, then a **global scale** matches five-year survival for the LA mix.
+- **Covariates:** Bank Rate and claimant count (panel) enter **log‑linear** birth and hazard scaling; optional GDP path; optional **distress** series (claimant volatility) scales hazard.
+- **Policies:** Portfolios map to `policy_*` parameters (global and per‑sector birth/hazard/“infant” hazard). **Displacement** optionally scales formation using neighbour mean births (`geo.AdjacentAuthorities`).
+- **Scenarios:** Observed rate/claimant paths are overlaid with stylised **recession** (tighter rates, higher claimants) or **expansion**.
+- **Inference:** **Moment matching** + pooled FD regression; **SMC** through **`analysis.RunSMCInference`** with **`inference.DataComparisonIteration`** (scalar hazard or bivariate survival+birth moments).
 
-```
-┌─────────────────────────────────────────────────────────┐
-│             MACROECONOMIC ENVIRONMENT                    │
-│  GDP growth, interest rates, credit conditions,          │
-│  consumer confidence, sector-specific demand             │
-│  (stochastic, learned from ONS/BoE data)                │
-└───┬──────────────┬─────────────┬────────────────────────┘
-    │              │             │
-    ▼              ▼             ▼
-┌─────────────────────────────────────────────────────────┐
-│              BUSINESS BIRTH PROCESS                       │
-│  New incorporations at Companies House                   │
-│  Rate = f(economic conditions, sector, region)           │
-│  Each birth has: sector (SIC), location, type            │
-│  INTERVENTION: Startup grants, incubators, mentoring     │
-└──────────────────┬──────────────────────────────────────┘
-                   │ new businesses enter population
-                   ▼
-┌─────────────────────────────────────────────────────────┐
-│           ACTIVE BUSINESS POPULATION                      │
-│  State per business: age, sector, size band, status      │
-│                                                          │
-│  ┌─────────┐    ┌──────────┐    ┌──────────┐           │
-│  │  MICRO  │───▶│  SMALL   │───▶│  MEDIUM  │           │
-│  │ (0-9)   │    │ (10-49)  │    │ (50-249) │           │
-│  └────┬────┘    └────┬─────┘    └────┬─────┘           │
-│       │              │               │                   │
-│       ▼              ▼               ▼                   │
-│  ┌──────────────────────────────────────────┐           │
-│  │           DISTRESS STATE                  │           │
-│  │  Late filing, dormancy, CCJs              │           │
-│  │  INTERVENTION: Rate relief, rescue advice │           │
-│  └─────────────────┬────────────────────────┘           │
-│                    │                                     │
-│                    ▼                                     │
-│  ┌──────────────────────────────────────────┐           │
-│  │           DEATH (DISSOLUTION)             │           │
-│  │  Voluntary strike-off, liquidation,       │           │
-│  │  compulsory dissolution                   │           │
-│  └──────────────────────────────────────────┘           │
-└─────────────────────────────────────────────────────────┘
+---
 
-┌─────────────────────────────────────────────────────────┐
-│         SUPPORT INTERVENTIONS (POLICY LEVERS)            │
-│                                                          │
-│  Pre-birth: Enterprise education, startup loans          │
-│  Early-stage: Incubators, mentoring, grant programmes    │
-│  Growth: Rate relief, R&D tax credits, export support    │
-│  Distress: Business rescue advice, rate hardship relief  │
-│  Place-based: Enterprise Zones, Investment Zones         │
-│                                                          │
-│  Each intervention modifies specific transition rates    │
-│  Effect magnitudes are uncertain — modelled as priors    │
-│  from published evaluation evidence                      │
-└─────────────────────────────────────────────────────────┘
+## 4. How to use
 
-┌─────────────────────────────────────────────────────────┐
-│              OUTCOMES                                     │
-│  Business survival rate (1yr, 3yr, 5yr)                  │
-│  Net business stock change                               │
-│  Total employment in surviving businesses                │
-│  GVA contribution                                        │
-│  Displacement: did support create new activity or just   │
-│  move it from elsewhere?                                 │
-└─────────────────────────────────────────────────────────┘
+### 4.1 Prerequisites
+
+- **Go** (see `go.mod`).
+- Data under `dat/` — either your own downloads or outputs from the commands below (large CH CSV and NSPL zip are not committed).
+
+### 4.2 Build and test
+
+```bash
+go build ./...
+go test -count=1 ./...
 ```
 
-### 2.3 Key modelling choices
+### 4.3 Run the stochadex example (YAML-generated partition)
 
-- **Local authority level** as the primary spatial unit, matching ONS business demography and Companies House postcode data.
-- **Monthly time step** for birth/death events (matching Companies House update cadence), with annual calibration against ONS demography cohort survival curves.
-- **Age-dependent hazard:** Business failure risk is strongly age-dependent — highest in years 1–3, declining with maturity. The stochadex models this as a time-inhomogeneous hazard function learned from ONS survival curves by sector and region.
-- **Sector heterogeneity:** Different SIC groups have very different birth rates, death rates, and survival profiles. Hospitality has much higher churn than professional services. The model learns separate dynamics per sector group.
-- **Intervention effects as uncertain parameter modifiers:** Each support intervention modifies specific transition rates (e.g., rate relief reduces the distress→death transition probability). The magnitude is uncertain — modelled as a prior distribution informed by published evaluation evidence, updated with local data where available.
-- **Ensemble approach:** Run hundreds of stochastic trajectories per intervention portfolio to build distributions of survival and employment outcomes.
+```bash
+go run github.com/umbralcalc/stochadex/cmd/stochadex --config cfg/single_la_population.yaml
+```
 
----
+### 4.4 Rebuild analysis artefacts (paths are examples)
 
-## Phase 3: Learning from Data
+```bash
+# ONS survival / births / deaths JSON → dat/ons_demography.json
+go run ./cmd/parse-ons -h
 
-### 3.1 Simulation-based inference
+# Companies House bulk CSV + NSPL → dat/la_births.json (see cmd/explore flags)
+go run ./cmd/explore -csv dat/BasicCompanyDataAsOneFile-2026-03-02.csv \
+  -nspl dat/nspl_nov2025.zip
 
-1. **Construct lifecycle histories** from Companies House bulk data: for each company, extract incorporation date, dissolution date (if applicable), SIC codes, registered address postcode, and accounts category. This gives millions of observed lifetimes and censored observations.
-2. **Calibrate against ONS business demography:** The ONS survival curves by cohort, sector, and region provide the aggregate targets. The stochadex learns micro-level transition rates that reproduce these macro-level survival statistics.
-3. **Fit economic sensitivity:** How do birth and death rates co-move with GDP growth, interest rates, and local employment? Learn these elasticities from the joint time series.
-4. **Key parameters to learn:**
-   - Baseline hazard function by sector and age (the "survival curve shape")
-   - Economic sensitivity: how much do recessions increase death rates and suppress birth rates?
-   - Interest rate sensitivity: how does the BoE rate affect small business survival (debt service channel)?
-   - Regional variation: conditional on sector and economic conditions, how much do survival rates differ across regions?
-   - Growth transition probabilities: what fraction of micro businesses reach small/medium scale, by sector and age?
+# Panel: births + BoE rate + claimants → dat/la_panel.json
+go run ./cmd/analyse -h
 
-### 3.2 Intervention effect estimation
+# Cross-sectional age by sector / LA from CH CSV
+go run ./cmd/lifecycles -csv dat/BasicCompanyDataAsOneFile-2026-03-02.csv \
+  -nspl dat/nspl_nov2025.zip -snapshot 2026-03-02 > dat/lifecycle_age_hist.json
+```
 
-For each support intervention, construct a prior distribution of its effect on survival/growth from published evaluation evidence:
-
-| Intervention | Effect parameter | Prior source |
-|-------------|-----------------|--------------|
-| Enterprise Zone rate relief | Effect on business birth rate in zone | Centre for Cities evaluation: 13,500 jobs at £28,540/job, but with significant displacement |
-| Small Business Rates Relief | Effect on distress→death transition | BEIS/government Call for Evidence (2025): qualitative evidence that cliff-edges deter expansion |
-| Start Up Loans | Effect on 1-year survival of recipients | British Business Bank evaluations |
-| Incubator/accelerator programmes | Effect on growth transition rate | UEZ evaluation: £100K additional GVA per programme, but diminishing over time |
-| Mentoring programmes | Effect on survival and growth | BEIS mentoring evidence review |
-| R&D tax credits / Innovate UK grants | Effect on growth and high-growth probability | Innovate UK impact evaluations |
-
-Where possible, update these priors with local data from specific intervention areas.
-
-### 3.3 The displacement problem
-
-The central methodological challenge: did the Enterprise Zone *create* businesses, or did it just *move* them from nearby areas? The stochadex addresses this by modelling the coupled dynamics of the zone and its hinterland — if births increase in the zone but decrease in adjacent LAs by the same amount, the net effect is zero. This requires fitting a spatial model where business formation in one LA can be affected by conditions (including policy) in neighbouring LAs.
-
-### 3.4 Validation strategy
-
-- **Temporal holdout:** Train on 2009–2020, predict 2021–2025 business demography (a demanding test given COVID and the rate-rise cycle).
-- **COVID natural experiment:** The pandemic caused massive, sector-differentiated business distress. Can the model reproduce the observed pattern of deaths by sector (hospitality devastated, technology resilient)?
-- **Cohort survival:** Does the model reproduce the ONS 1yr, 3yr, and 5yr survival curves for each sector and region?
-- **Cross-LA validation:** Train on a subset of local authorities, predict demography in held-out LAs.
-
----
-
-## Phase 4: Decision Science Layer
-
-### 4.1 Policy actions to evaluate
-
-| Policy type | How it acts in the model | Decision variables |
-|-------------|--------------------------|-------------------|
-| **Small Business Rates Relief** | Reduces distress probability for micro businesses | Threshold (rateable value), taper rate |
-| **Enterprise Zone designation** | Reduces rates, increases birth rate in zone (but may displace from nearby) | Zone location, duration, rate relief level |
-| **Startup grants/loans** | Increases early-stage survival and reduces capital constraints | Grant size, eligibility criteria, sector targeting |
-| **Incubator/accelerator** | Increases growth transition probability for participants | Programme intensity, sector focus, duration |
-| **Mentoring programmes** | Reduces death rate for participants, increases growth | Coverage (% of eligible businesses reached), matching quality |
-| **Sector-specific support** | Targeted interventions for high-potential or vulnerable sectors | Sector selection, intervention type, budget allocation |
-| **Portfolio approach** | Combination of multiple interventions targeting different lifecycle stages | Budget allocation across programmes |
-
-### 4.2 The lifecycle targeting question
-
-A key insight is that different interventions are effective at different lifecycle stages. Rate relief helps established businesses in distress; startup loans help nascent businesses survive year 1; incubators help young businesses grow. The stochadex can evaluate *portfolios* that target different stages, answering: "given a fixed budget, should we spend 60% on rate relief and 40% on startup loans, or 30/30/40 split with incubator funding?"
-
-### 4.3 Objective function
-
-For each intervention portfolio, simulate multiple trajectories across economic scenarios and evaluate:
-
-- **Primary outcome:** Expected 5-year business survival rate for the cohort of businesses born in year 1 of the intervention
-- **Employment outcome:** Expected net employment in surviving businesses at 5 years
-- **Value for money:** Cost per additional surviving business and cost per additional job (comparable to Enterprise Zone evaluations)
-- **Displacement metric:** Net effect across the LA and its neighbours (is the intervention creating activity or moving it?)
-- **Robustness:** Performance under recession and expansion scenarios
-- **Distributional:** Which sectors and business types benefit most?
-
-### 4.4 Output
-
-For a given local authority and budget, produce actionable recommendations:
-
-> *"For Sheffield (current 5-year business survival rate: 42%), a portfolio of £5M over 5 years split between targeted rate relief for hospitality businesses in years 1–2 (£2M), an incubator programme for tech startups (£1.5M), and a mentoring network for businesses in years 2–4 (£1.5M) increases the expected 5-year survival rate to 46.8% (90% CI: 44.1% to 49.5%), creating an estimated 340 additional surviving businesses and 1,200 additional jobs. This compares to Enterprise Zone rate relief alone, which would increase the birth rate by 8% but with 60% of the effect being displacement from adjacent areas, yielding only 130 net additional surviving businesses. Under a recession scenario (GDP −2%), the portfolio outperforms rate relief alone by a wider margin, as the mentoring component provides resilience that pure cost reduction does not."*
-
----
-
-## Phase 5: Extensions
-
-1. **Full UK coverage:** Scale to all ~370 local authorities, producing a national business support dashboard that government departments could use to allocate regional funding
-2. **Supply chain dynamics:** Model inter-business dependencies — when a key customer or supplier fails, it increases the hazard rate for connected businesses. Use Companies House officer and significant person data to infer network connections.
-3. **Net zero transition:** Model the differential impact of decarbonisation on business survival by sector — fossil-fuel-dependent businesses face declining demand, while green economy businesses may have higher birth rates but uncertain survival. Evaluate whether targeted support can smooth the transition.
-4. **Real-time distress monitoring:** Use Companies House filing patterns (late accounts, dormancy flags) as leading indicators of business distress, connected to the simulation for early intervention targeting.
-5. **International comparison:** Adapt the model to other jurisdictions with comparable open data (e.g., Ireland's CRO, Netherlands' KvK) for cross-country policy comparison.
-6. **Founder characteristics:** Where Companies House officer data permits, model how director experience, serial entrepreneurship, and team composition affect survival — enabling more targeted mentoring and support matching.
-
----
-
-## Concrete First Steps
-
-### Week 1–2: Data acquisition and exploration ✅
-
-- [x] Download Companies House Free Company Data Product (March 2026 snapshot, 5.26M live limited companies)
-- [x] Download ONS Business Demography reference table (2024 publication — 2,126 survival series, 1,688 birth/death rows by LA)
-- [x] Download NOMIS claimant count for all 406 LAs, monthly 2013–2026 (64k rows)
-- [x] Download Bank of England Bank Rate daily series from 2000 (via stats database CSV API)
-- [x] Download ONS NSPL November 2025 postcode → LA lookup (2.5M postcodes)
-- [x] Select 10 target local authorities: Westminster, Tower Hamlets, Manchester, Sheffield, Cornwall, Cambridge, Oxford, York, Kingston upon Hull, Burnley (see `pkg/geo/target_las.go`)
-- [x] Exploratory analysis pipeline:
-  - `cmd/parse-ons` → `dat/ons_demography.json` (ONS survival curves by LA)
-  - `cmd/explore` → `dat/la_births.json` (per-LA monthly birth counts by sector group, enriched via postcode→LA join)
-  - `cmd/analyse` → `dat/la_panel.json` (joined monthly panel with BoE rate + claimant count, plus Pearson correlations)
-- [x] First-pass findings: 379k of 5.26M live companies are in the 10 target LAs (~7%); UK 5-year survival for the 2019 cohort is 38.4% (ONS). Raw ρ(births, rate) ≈ 0.75 and ρ(births, claimant) ≈ 0.4 across LAs, but this is dominated by a shared upward trend over 2013–2025 — proper elasticity estimation requires detrending/differencing and belongs to Phase 3.
-
-### Week 3–4: Minimal stochadex simulation
-
-- [x] Implement a single-LA business population model with birth and death processes
-- [x] Parameterise with age-dependent hazard functions by sector
-- [x] Add economic sensitivity (GDP, interest rate covariates)
-- [x] Verify the simulation reproduces ONS survival curves and aggregate birth/death rates
-
-Implementation: `pkg/population` (`SingleLAPopulationIteration`), hazard helpers from ONS cumulative survival, tests against UK and Hull curves, mean monthly births vs ONS annual flows, and elasticity smoke tests for bank rate and optional GDP growth covariates. Example CLI config: `cfg/single_la_population.yaml`.
-
-### Week 5–6: Simulation-based inference
-
-- [x] Construct company lifecycle histories from Companies House data
-- [x] Set up SBI to learn transition rate parameters from observed lifecycle data, conditional on economic covariates
-- [x] Validate: does the model reproduce the COVID business death pattern by sector?
-- [x] Fit the economic sensitivity elasticities using the 2008–2009 and 2020 recessions as natural experiments
-
-Pipeline:
-
-- **`cmd/lifecycles`** → cross-sectional **age histograms by sector / LA** (right-censored at snapshot) from the bulk CSV + NSPL.
-- **`pkg/lifecycle`** — shared **SIC→sector** mapping with `cmd/explore`; row parser for incorporation / dissolution / snapshot age.
-- **`pkg/calibrate`** — **pooled first-difference regression** of births on bank rate and log(claimants) (`la_panel.json`); **national sector YoY** formation slump (COVID: hospitality vs technology April 2020); **recession-window mean Δ-births** (2009 only if the panel extends back); **global hazard scale** to match ONS 5-year survival under a **sector-mixed** hazard with literature-relative multipliers (`DefaultSectorHazardRelatives`).
-
-**Sequential Monte Carlo (SMC):** `pkg/calibrate` delegates to stochadex **`pkg/analysis.RunSMCInference`** (`inference.DataComparisonIteration` + `inference.NormalLikelihoodDistribution`):
-
-- **Scalar hazard:** `NewHazardScaleAppliedSMCInference` / `RunSMCHazardScaleCalibration` — inner **`population.ScaledCohortSurvivalIteration`** vs five-year survival.
-- **Bivariate moments:** `NewPopulationMomentsAppliedSMCInference` / `RunSMCPopulationMomentsCalibration` — inner **`population.PopulationSurvivalBirthMomentsIteration`** ( `[5y cohort survival, mean monthly births]` in one step) vs joint Gaussian observations. CLI: **`cmd/smcinfer -mode moments`**.
-
-Moment matching + panel FD regression remain the **fast baseline**; SMC supplies particle posteriors for calibration and model checking.
-
-### Week 7–8: Decision science layer
-
-- [x] Implement 3–4 candidate support intervention portfolios as action sets
-- [x] Set intervention effect priors from published evaluation literature
-- [x] Run policy evaluation across economic scenarios (baseline, recession, expansion)
-- [x] Produce initial findings and visualisations for target LAs (`cmd/evaluate` → JSON summaries for plotting)
-- [x] Write up (Engineering Smart Actions in Practice — narrative in this section)
-
-**Code:** **`pkg/policy`** — `StandardPortfolios()` (baseline, rates relief, startup grants, incubator/EZ style, mentoring, blended bundle), `LiteraturePriorsTable`, `SectorOrder`, `AdjustCovariates` for scenarios. **`population.SingleLAPopulationIteration`** accepts optional **`policy_*`** params: `policy_birth_scale`, `policy_death_hazard_scale`, `policy_infant_hazard_scale` (0→1 month hazard only), optional per-sector `policy_sector_birth_scale` / `policy_sector_hazard_scale`.
-
-**What each portfolio does (minimal Leslie knobs):** birth multipliers, exit-hazard multipliers, and optional sector tilts. Optional **`-displacement`** shrinks local formation using **`geo.AdjacentAuthorities`** and neighbour mean births (`geo.DisplacementBirthFactor`) — a sketch of leakage, not a full spatial equilibrium (Phase 5). **`LiteraturePriorsTable`** documents conservative *ranges*; `StandardPortfolios()` uses **point multipliers inside those bands**. **`distress_hazard_boost`** (from **`-distress-from-claimants`**: rolling volatility of claimant log-diffs) feeds the population model as a **leading-indicator** hazard overlay (Companies House filings can replace this series later).
-
-**Scenarios:** `AdjustCovariates` layers stylised stress or easing on the observed bank-rate and claimant paths (and optional synthetic GDP growth via `-gdp-indexed`). These are overlays on history, not a full macro model.
-
-**Evaluation output:** For each **portfolio × scenario**, `cmd/evaluate` reports Monte Carlo mean/std of (1) **final stock** after *N* months with births on, and (2) **five-year cohort survival** in a separate run with **births forced to zero** so survival is not inflated by new entrants. It loads `la_panel.json`, `la_births.json`, and ONS survival; calibrates sector hazards with `FitGlobalHazardScale`.
-
-**Guardrails:** Seeds are isolated per (portfolio, scenario, replication) — use outputs for **relative** ranking and stress tests, not literal forecasts. **`-auto-elasticities`** maps pooled first-difference panel regression onto simulation semielasticities (`calibrate.SimulationElasticitiesFromPanel`). Otherwise default elasticities are zero unless you pass `-e-rate` / `-e-claim` / `-e-death`. **`-bootstrap`** resamples panel months (nonparametric uncertainty). **`-policy-jitter`** multiplicatively perturbs non-baseline policy levers per replicate (prior-style robustness).
-
-**Engine (`pkg/evaluate`):** `evaluate.Run` powers **`cmd/evaluate`** (single LA or **`-batch-target-las`** JSON bundle). **`cmd/evalplot`** reads that JSON and writes **go-echarts** HTML (same plotting stack as stochadex tests).
+### 4.5 Policy evaluation (single LA)
 
 ```bash
 go run ./cmd/evaluate -la E06000010 -runs 64 -months 120 -out dat/evaluate_hull.json
-go run ./cmd/evaluate -batch-target-las -runs 32 -months 96 -auto-elasticities -out dat/evaluate_batch.json
+```
+
+**Useful flags:** `-auto-elasticities` · `-displacement 0.12` · `-distress-from-claimants` · `-bootstrap 30` · `-policy-jitter 0.08` · `-deterministic` · `-gdp-indexed`
+
+### 4.6 Batch target local authorities
+
+```bash
+go run ./cmd/evaluate -batch-target-las -runs 32 -months 96 -auto-elasticities \
+  -out dat/evaluate_batch.json
+```
+
+### 4.7 Charts from evaluation JSON
+
+Uses [go-echarts](https://github.com/go-echarts/go-echarts) (same ecosystem as stochadex tests):
+
+```bash
 go run ./cmd/evalplot -in dat/evaluate_hull.json -html dat/evaluate_hull.html
-go run ./cmd/smcinfer -mode moments -la E06000010 -particles 80 -rounds 4
+```
+
+Open the HTML in a browser.
+
+### 4.8 SMC calibration (stochadex `pkg/analysis`)
+
+```bash
+# Scalar hazard multiplier vs 5‑year survival
+go run ./cmd/smcinfer -mode hazard
+
+# Bivariate: survival + mean monthly births
+go run ./cmd/smcinfer -mode moments -la E06000010 -particles 80 -rounds 4 -out dat/smc_moments.json
 ```
 
 ---
 
-## Key Data Sources Summary
+## 5. Results
 
-| Source | URL | Data type | Access |
-|--------|-----|-----------|--------|
-| Companies House Free Company Data | download.companieshouse.gov.uk | Bulk CSV: all live companies with incorporation/dissolution dates, SIC codes, address, status | Free monthly download |
-| Companies House Accounts Data | download.companieshouse.gov.uk/en_accountsdata.html | Company accounts in XBRL: financials, employee counts | Free daily/monthly download |
-| Companies House API | developer.company-information.service.gov.uk | Individual company lookups, filing history, officer data | Free with API key registration |
-| ONS Business Demography | ons.gov.uk (Business births, deaths and survival rates) | Annual: births, deaths, active stock, survival rates by LA, SIC, cohort | Free download |
-| ONS UK Business: Activity, Size and Location | ons.gov.uk | Annual count of businesses by LA, SIC, size band, legal form | Free download |
-| NOMIS Labour Market Statistics | nomisweb.co.uk | Employment, claimant count, vacancies, sector composition by LA/TTWA | Free download |
-| Bank of England | bankofengland.co.uk/statistics | Bank Rate, business lending volumes, credit conditions | Free download |
-| ONS Regional GVA | ons.gov.uk | Gross Value Added by LA and industry | Free download |
-| VOA Non-Domestic Rating | gov.uk (search "non-domestic rating") | Rateable values, business rates relief by LA | Free download |
-| British Business Bank | british-business-bank.co.uk | Start Up Loans data, government-backed lending by region | Annual reports, some open data |
-| BEIS/DBT Evaluations | gov.uk (search programme names) | Published evaluation evidence for business support programmes | Free PDF reports |
+### 5.1 National context (ONS)
+
+From the Phase‑1 exploratory pass: the **2019 birth cohort** at **UK** level has a **five‑year survival** of about **38.4%** (ONS business demography, as cited in project notes). That figure is a **benchmark** for qualitative comparison only—the simulation is LA‑specific and uses a structural model, not a reproduction of the national estimator.
+
+### 5.2 Case study: Kingston upon Hull (`E06000010`)
+
+The following comes from **`dat/evaluate_hull.json`** (`generated_at`: **2026-04-06T09:15:15Z**): **64** stochastic replications per cell, **120** months of stock dynamics, cohort survival sub‑run with **births switched off** and cohort size **5000** (default). **Macro scenarios:** `baseline`, `recession`, `expansion` (see `pkg/policy/scenarios.go`).
+
+**Five-year cohort survival** (mean ± std dev of replicate means):
+
+| Portfolio | Baseline | Recession | Expansion |
+|-----------|----------|-----------|------------|
+| No additional intervention | 0.374 ± 0.007 | 0.372 ± 0.007 | 0.375 ± 0.007 |
+| Rates & cash-flow relief | **0.414** ± 0.007 | **0.412** ± 0.007 | **0.414** ± 0.008 |
+| Startup finance & first-year support | 0.374 ± 0.007 | 0.372 ± 0.007 | 0.374 ± 0.007 |
+| Incubator / enterprise-zone style | 0.385 ± 0.006 | 0.384 ± 0.007 | 0.386 ± 0.007 |
+| Mentoring & peer resilience | 0.398 ± 0.006 | 0.394 ± 0.007 | 0.398 ± 0.008 |
+| Blended portfolio | **0.413** ± 0.007 | **0.411** ± 0.007 | **0.415** ± 0.006 |
+
+**Mean final stock** (same run; arbitrary scale driven by Poisson births and calibration—compare **across portfolios**, not to official stock counts):
+
+| Portfolio | Baseline | Recession | Expansion |
+|-----------|----------|-----------|------------|
+| Baseline | ~5625 ± 72 | ~5557 ± 78 | ~5662 ± 81 |
+| Rates relief | ~6042 ± 85 | ~5953 ± 72 | ~6050 ± 77 |
+| Startup grants | ~6280 ± 76 | ~6195 ± 82 | ~6294 ± 77 |
+| Incubator | ~6225 ± 78 | ~6151 ± 77 | ~6256 ± 74 |
+| Mentoring | ~5963 ± 80 | ~5911 ± 59 | ~6010 ± 71 |
+| Blended | **~6485** ± 82 | **~6401** ± 72 | **~6534** ± 80 |
+
+**Reading:** In this calibration, **relief** and **blended** packages lift **cohort survival** most; **startup** tilts mainly lift **flows/stock** without moving the pure survival metric much, consistent with how those levers are parameterised. **Recession** shaves outcomes slightly relative to **baseline**; rankings are **stable** across the three macro overlays in this run.
+
+### 5.3 What we found out — mapped to the original question
+
+The table below ties **empirical results** (Hull case, `dat/evaluate_hull.json`) to the **full** research question. Where a cell says *not in model*, the tool does not yet produce that outcome.
+
+| Theme | Original question asks… | What we found **so far** |
+|--------|-------------------------|---------------------------|
+| **Which portfolio “wins”?** | Best **combination** of relief, grants, incubators, mentoring | **Survival-oriented objective:** **rates & cash-flow relief** and the **blended** bundle rank highest for **5‑year cohort survival** (~**+4 pp** vs no intervention in the baseline scenario). **Stock-oriented objective:** **startup / first‑year** and **blended** rank highest for **mean final simulated stock**. **Incubator/EZ-style** is intermediate on both. **Mentoring** materially helps survival but sits **below relief/blended** in this calibration. |
+| **Survival** | Improvement in **business survival** over ~5–10 years | **Answered in proxy form:** isolated **cohort survival** after 60 months (no new entrants in that sub-run) tracks **~37% → ~41–42%** for the best bundles; aligns in order of magnitude with **national ONS ~38%** five-year benchmark for a different population definition (§5.1). |
+| **Employment** | **Employment growth** / jobs | **Not answered.** The state is a **count of businesses**, not jobs. Any sentence about jobs would require an **employment layer** (see §6). |
+| **Sectors & business types** | **For which sectors** does each lever work | **Partially encoded, not separately reported:** portfolios include **sector-specific** multipliers (e.g. relief tilts hospitality/retail); evaluation outputs are **aggregated** over sectors. We have **not** published a ranking **by sector** or by size band. |
+| **Economic conditions** | Performance under **recession vs expansion** | **Answered in stylised form:** three overlays on the same historical panel. **Rankings** (relief/blended best on survival; startup strong on stock) are **qualitatively stable**; levels shift modestly—no regime flip in this run. |
+| **Displacement & additionality** | **Net** effect vs **moving** activity | **Not answered quantitatively.** `-displacement` is a **heuristic** formation leakage vs neighbours, not calibrated displacement rates from evaluation literature. |
+| **Value for money** | **Cost per** survivor / job | **Not answered.** Budget fields on portfolios are **indicative** only; there is no **cost constraint** or **optimisation** over budget splits in the evaluator. |
+| **Time horizon** | **5–10 years** | **Partially:** stock paths to **120 months**; survival metric is **5‑year cohort**. Ten-year survival or employment paths are **not** yet standard outputs. |
+
+**Plain-language takeaway:** for this **Hull-shaped** calibration, if policymakers care most about **keeping young businesses alive through year five** (as the model defines it), **relief-heavy and blended** designs dominate **startup-only** stylisations; if they care most about **growing the register count**, **startup-heavy and blended** look stronger—but **jobs**, **true net additionality**, and **sector-by-sector winners** are still **outside** what the current outputs prove.
+
+### 5.4 Interpretation caveats
+
+- Outcomes are **model-based counterfactuals**, not ex-post programme evaluations.
+- **Displacement** is a **sketch** (neighbour mean births), not a spatial general equilibrium.
+- **Elasticities** from the panel are **mapped heuristically** when `-auto-elasticities` is used.
+- Official **employment** and **cost-per-job** are **not** yet endogenous; extend the state or post-process if those become reporting requirements.
 
 ---
 
-## References and Related Work
+## 6. Future work — closing the gaps in the original question
 
-- ONS Business Demography UK: 2022 — annual publication identifying births, deaths, survivals, and high-growth businesses, based on the IDBR (VAT/PAYE registrations)
-- Centre for Cities "In the Zone?" (2019) — evaluation finding Enterprise Zones created 13,500 jobs at £28,540 per job, with city-centre zones vastly outperforming suburban/rural ones and significant displacement concerns
-- UEZ Final Evaluation (2025) — University Enterprise Zones delivered £100K additional GVA and created jobs, outperforming comparators, but with diminishing engagement effects over time
-- BEIS Business Rates Call for Evidence (2025) — government consultation on how rates influence investment, highlighting the SBRR cliff-edge problem and exploring improvement relief and growth accelerator designs
-- Companies House URI Customer Guide — technical documentation for the bulk data fields and linked data SPARQL endpoint
-- ONS Multiple Business Registrations explainer — important data quality note on artificial inflation of birth/death counts from multiple registrations at single postcodes
+Each item states **what we would add** and **which part of the research question** it would unlock.
+
+| Extension | Enables answering… |
+|-----------|---------------------|
+| **Employment / labour state** — e.g. per-business weight from CH accounts bands or ONS jobs-to-business ratios; optional stochastic job growth. | *“Employment growth”* and rough **cost per incremental job** once paired with programme costs. |
+| **Sector- and size-disaggregated reporting** — evaluate outputs stratified by `policy.SectorOrder` (and cohorts); tables and plots per sector/size. | *“For which sectors and business types?”* |
+| **Displacement & additionality** — multi-LA coupled model or **calibrated** leakage parameters from quasi-experimental anchors; neighbour policy reactions. | *“Net effect vs relocation”* and narrative comparability to **Enterprise Zone**-style evidence. |
+| **Budgeted optimisation** — search or MPC over portfolio weights under a **spend cap**; tie `BudgetGBP` to WTP per survival point. | *“Greatest improvement under a fixed budget”* and **value-for-money** rankings. |
+| **Longer horizon & richer scenarios** — 10-year survival, alternate rate/claim paths, stress from **SMC** posterior draws. | *“5–10 years”* and **deeper** macro robustness. |
+| **Filing-based distress** — late accounts, dormancy flags into `distress_hazard_boost` or dedicated partition (**stochadex** `general` / `inference` pattern). | *“Early intervention”* and sharper **distress** channel than claimants alone. |
+| **Full UK scale** — batch all LAs, standardised JSON + dashboard (`evalplot` or service). | *National coverage* and **spatial** policy comparisons. |
+| **Networks, net zero, flags, international** — supply-chain shocks from CH graph; sector **transition** hazards; cross-country harmonisation. | Broader **Phase 5** questions beyond the core UK LA brief. |
+
+This list is the intentional bridge from **what the repository demonstrates today** to the **full** policy question in §1.
+
+---
+
+## 7. Key data sources
+
+| Source | Role |
+|--------|------|
+| [Companies House bulk company data](https://download.companieshouse.gov.uk/en_output.html) | Live register — formations and sector codes. |
+| [ONS business demography](https://www.ons.gov.uk/) | Survival, births, deaths by LA / sector / cohort. |
+| [NOMIS](https://www.nomisweb.co.uk/) | Claimant count and labour market context by LA. |
+| [Bank of England statistics](https://www.bankofengland.co.uk/statistics) | Bank Rate. |
+| [ONS NSPL](https://www.ons.gov.uk/methodology/geography/geographicalproducts/namesandcodes) | Postcode → local authority for CH join. |
+
+Further citations (Enterprise Zone evaluations, rates consultations, etc.) remain valuable background for priors—see `pkg/policy/LiteraturePriorsTable` in code.
+
+---
+
+## 8. Licence and contributing
+
+Conventions for stochadex iterations, YAML config, and tests are in **`CLAUDE.md`**. For iteration implementations, follow **`simulator.Iteration`**: **`Configure`** once, **`Iterate`** must not mutate `params`, return state of width **`StateWidth`**.
+
+---
+
+*Report revision aligns README with the implemented pipeline and committed example output `dat/evaluate_hull.json`. Regenerate numbers with `cmd/evaluate` after changing data or parameters.*
