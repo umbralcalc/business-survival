@@ -72,6 +72,8 @@ main:
 go build ./...                                    # compile this project
 go test -count=1 ./...                            # run all tests
 go run github.com/umbralcalc/stochadex/cmd/stochadex --config cfg/single_la_population.yaml
+go run ./cmd/lifecycles -csv dat/BasicCompanyDataAsOneFile-2026-03-02.csv \
+    -nspl dat/nspl_nov2025.zip -snapshot 2026-03-02 > dat/lifecycle_age_hist.json
 ```
 
 ## Testing Conventions

@@ -340,10 +340,18 @@ Implementation: `pkg/population` (`SingleLAPopulationIteration`), hazard helpers
 
 ### Week 5–6: Simulation-based inference
 
-- [ ] Construct company lifecycle histories from Companies House data
-- [ ] Set up SBI to learn transition rate parameters from observed lifecycle data, conditional on economic covariates
-- [ ] Validate: does the model reproduce the COVID business death pattern by sector?
-- [ ] Fit the economic sensitivity elasticities using the 2008–2009 and 2020 recessions as natural experiments
+- [x] Construct company lifecycle histories from Companies House data
+- [x] Set up SBI to learn transition rate parameters from observed lifecycle data, conditional on economic covariates
+- [x] Validate: does the model reproduce the COVID business death pattern by sector?
+- [x] Fit the economic sensitivity elasticities using the 2008–2009 and 2020 recessions as natural experiments
+
+Pipeline:
+
+- **`cmd/lifecycles`** → cross-sectional **age histograms by sector / LA** (right-censored at snapshot) from the bulk CSV + NSPL.
+- **`pkg/lifecycle`** — shared **SIC→sector** mapping with `cmd/explore`; row parser for incorporation / dissolution / snapshot age.
+- **`pkg/calibrate`** — **pooled first-difference regression** of births on bank rate and log(claimants) (`la_panel.json`); **national sector YoY** formation slump (COVID: hospitality vs technology April 2020); **recession-window mean Δ-births** (2009 only if the panel extends back); **global hazard scale** to match ONS 5-year survival under a **sector-mixed** hazard with literature-relative multipliers (`DefaultSectorHazardRelatives`).
+
+Full **sequential Monte Carlo / stochadex `inference.SMC`** likelihood layers are deferred to tighter likelihood wiring against simulated trajectories; calibration here is the **moment-matching + panel econometrics** foundation.
 
 ### Week 7–8: Decision science layer
 

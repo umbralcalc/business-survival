@@ -8,3 +8,6 @@ parse-ons
 
 analyse
 !cmd/analyse/
+
+lifecycles
+!cmd/lifecycles/

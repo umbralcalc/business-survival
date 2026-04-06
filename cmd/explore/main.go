@@ -24,36 +24,8 @@ import (
 	"time"
 
 	"github.com/umbralcalc/business-survival/pkg/geo"
+	"github.com/umbralcalc/business-survival/pkg/lifecycle"
 )
-
-// Column indices in the Companies House CSV.
-const (
-	colPostCode        = 9
-	colCompanyCategory = 10
-	colIncorporation   = 14
-	colSIC1            = 26
-)
-
-// SIC group boundaries (first two digits of SIC code).
-var sicGroups = map[string]string{
-	"41": "Construction", "42": "Construction", "43": "Construction",
-	"47": "Retail",
-	"55": "Hospitality", "56": "Hospitality",
-	"62": "Technology", "63": "Technology",
-	"69": "Professional", "70": "Professional", "71": "Professional",
-	"72": "Professional", "73": "Professional", "74": "Professional",
-}
-
-func sicGroupFromText(sic string) string {
-	sic = strings.TrimSpace(sic)
-	if len(sic) < 2 {
-		return "Other"
-	}
-	if g, ok := sicGroups[sic[:2]]; ok {
-		return g
-	}
-	return "Other"
-}
 
 func parseDate(s string) (time.Time, bool) {
 	s = strings.TrimSpace(s)
@@ -160,15 +132,15 @@ func main() {
 		if err != nil {
 			continue
 		}
-		if len(row) <= colSIC1 {
+		if len(row) <= lifecycle.ColSICPrimaryText {
 			continue
 		}
 
-		cat := strings.TrimSpace(row[colCompanyCategory])
+		cat := strings.TrimSpace(row[lifecycle.ColCompanyCategory])
 		if cat != "Private Limited Company" && cat != "Public Limited Company" {
 			continue
 		}
-		incorp, ok := parseDate(row[colIncorporation])
+		incorp, ok := parseDate(row[lifecycle.ColIncorporationDate])
 		if !ok {
 			continue
 		}
@@ -178,13 +150,13 @@ func main() {
 		nationalMonthly[month]++
 
 		// Resolve LA via postcode.
-		la, ok := pcLookup[geo.Normalise(row[colPostCode])]
+		la, ok := pcLookup[geo.Normalise(row[lifecycle.ColPostCode])]
 		if !ok {
 			continue
 		}
 		matchedLA++
 
-		group := sicGroupFromText(row[colSIC1])
+		group := lifecycle.SectorFromSIC(row[lifecycle.ColSICPrimaryText])
 		acc := accums[la]
 		if acc == nil {
 			acc = newLAAccum()
