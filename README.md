@@ -315,14 +315,19 @@ For a given local authority and budget, produce actionable recommendations:
 
 ## Concrete First Steps
 
-### Week 1–2: Data acquisition and exploration
+### Week 1–2: Data acquisition and exploration ✅
 
-- [ ] Download Companies House Free Company Data Product (latest monthly snapshot)
-- [ ] Download ONS Business Demography reference table (births, deaths, survival by LA and SIC)
-- [ ] Download NOMIS labour market data for target local authorities
-- [ ] Download Bank of England interest rate and lending data
-- [ ] Select 5–10 target local authorities spanning different economic contexts
-- [ ] Exploratory analysis: construct empirical survival curves from Companies House data by sector and region; compare with ONS published curves; characterise the relationship between economic conditions and birth/death rates
+- [x] Download Companies House Free Company Data Product (March 2026 snapshot, 5.26M live limited companies)
+- [x] Download ONS Business Demography reference table (2024 publication — 2,126 survival series, 1,688 birth/death rows by LA)
+- [x] Download NOMIS claimant count for all 406 LAs, monthly 2013–2026 (64k rows)
+- [x] Download Bank of England Bank Rate daily series from 2000 (via stats database CSV API)
+- [x] Download ONS NSPL November 2025 postcode → LA lookup (2.5M postcodes)
+- [x] Select 10 target local authorities: Westminster, Tower Hamlets, Manchester, Sheffield, Cornwall, Cambridge, Oxford, York, Kingston upon Hull, Burnley (see `pkg/geo/target_las.go`)
+- [x] Exploratory analysis pipeline:
+  - `cmd/parse-ons` → `dat/ons_demography.json` (ONS survival curves by LA)
+  - `cmd/explore` → `dat/la_births.json` (per-LA monthly birth counts by sector group, enriched via postcode→LA join)
+  - `cmd/analyse` → `dat/la_panel.json` (joined monthly panel with BoE rate + claimant count, plus Pearson correlations)
+- [x] First-pass findings: 379k of 5.26M live companies are in the 10 target LAs (~7%); UK 5-year survival for the 2019 cohort is 38.4% (ONS). Raw ρ(births, rate) ≈ 0.75 and ρ(births, claimant) ≈ 0.4 across LAs, but this is dominated by a shared upward trend over 2013–2025 — proper elasticity estimation requires detrending/differencing and belongs to Phase 3.
 
 ### Week 3–4: Minimal stochadex simulation
 
