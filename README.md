@@ -351,7 +351,9 @@ Pipeline:
 - **`pkg/lifecycle`** — shared **SIC→sector** mapping with `cmd/explore`; row parser for incorporation / dissolution / snapshot age.
 - **`pkg/calibrate`** — **pooled first-difference regression** of births on bank rate and log(claimants) (`la_panel.json`); **national sector YoY** formation slump (COVID: hospitality vs technology April 2020); **recession-window mean Δ-births** (2009 only if the panel extends back); **global hazard scale** to match ONS 5-year survival under a **sector-mixed** hazard with literature-relative multipliers (`DefaultSectorHazardRelatives`).
 
-Full **sequential Monte Carlo / stochadex `inference.SMC`** likelihood layers are deferred to tighter likelihood wiring against simulated trajectories; calibration here is the **moment-matching + panel econometrics** foundation.
+**Sequential Monte Carlo (SMC):** `pkg/calibrate` exposes `NewHazardScaleAppliedSMCInference` and `RunSMCHazardScaleCalibration`, which delegate to stochadex **`pkg/analysis.RunSMCInference`** (the packaged SMC toolkit: proposal, embedded inner sim, posterior) with inner partitions **`population.ScaledCohortSurvivalIteration`** + Gaussian **`DataComparisonIteration`** on five-year survival. Extend the `analysis.SMCParticleModel` builder to extra moments or full **`SingleLAPopulationIteration`** trajectories as likelihood components tighten.
+
+Moment matching + panel FD regression remain the **fast baseline**; SMC supplies a **proper particle posterior** for scalar (and, with more partitions, multi-parameter) calibration.
 
 ### Week 7–8: Decision science layer
 
