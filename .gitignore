@@ -5,3 +5,6 @@ explore
 
 parse-ons
 !cmd/parse-ons/
+
+analyse
+!cmd/analyse/
