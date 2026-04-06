@@ -331,10 +331,12 @@ For a given local authority and budget, produce actionable recommendations:
 
 ### Week 3–4: Minimal stochadex simulation
 
-- [ ] Implement a single-LA business population model with birth and death processes
-- [ ] Parameterise with age-dependent hazard functions by sector
-- [ ] Add economic sensitivity (GDP, interest rate covariates)
-- [ ] Verify the simulation reproduces ONS survival curves and aggregate birth/death rates
+- [x] Implement a single-LA business population model with birth and death processes
+- [x] Parameterise with age-dependent hazard functions by sector
+- [x] Add economic sensitivity (GDP, interest rate covariates)
+- [x] Verify the simulation reproduces ONS survival curves and aggregate birth/death rates
+
+Implementation: `pkg/population` (`SingleLAPopulationIteration`), hazard helpers from ONS cumulative survival, tests against UK and Hull curves, mean monthly births vs ONS annual flows, and elasticity smoke tests for bank rate and optional GDP growth covariates. Example CLI config: `cfg/single_la_population.yaml`.
 
 ### Week 5–6: Simulation-based inference
 

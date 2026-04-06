@@ -1,0 +1,49 @@
+main:
+  partitions:
+  - name: population
+    iteration: pop
+    params:
+      survival_fracs: [0.93, 0.731, 0.554, 0.43, 0.355]
+      sector_hazard_scales: [1.0]
+      base_birth_rates: [77.5]
+      covariate_bank_rates:
+      - 0.5
+      - 0.5
+      - 0.5
+      - 0.5
+      - 0.5
+      - 0.5
+      - 0.5
+      - 0.5
+      - 0.5
+      - 0.5
+      - 0.5
+      - 0.5
+      covariate_claimants: [14000.0]
+      rate_ref: [0.5]
+      claimant_ref: [14000.0]
+      birth_elasticity_rate: [0.0]
+      birth_elasticity_claimant: [0.0]
+      death_elasticity_rate: [0.0]
+      deterministic: [1.0]
+    init_state_values: [
+      0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+      0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+      0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+      0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+      0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+      0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    ]
+    state_history_depth: 2
+    seed: 7100
+    extra_packages:
+    - github.com/umbralcalc/business-survival/pkg/population
+    extra_vars:
+    - pop: "&population.SingleLAPopulationIteration{}"
+
+  simulation:
+    output_condition: "&simulator.EveryStepOutputCondition{}"
+    output_function: "&simulator.StdoutOutputFunction{}"
+    termination_condition: "&simulator.NumberOfStepsTerminationCondition{MaxNumberOfSteps: 12}"
+    timestep_function: "&simulator.ConstantTimestepFunction{Stepsize: 1.0}"
+    init_time_value: 0.0

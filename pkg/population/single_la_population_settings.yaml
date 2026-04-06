@@ -1,0 +1,51 @@
+iterations:
+- name: population
+  params:
+    survival_fracs: [0.946, 0.747, 0.559, 0.45, 0.384]
+    sector_hazard_scales: [1.0]
+    base_birth_rates: [4.0]
+    covariate_bank_rates:
+    - 0.5
+    - 0.5
+    - 0.5
+    - 0.5
+    - 0.5
+    - 0.5
+    - 0.5
+    - 0.5
+    - 0.5
+    - 0.5
+    - 0.5
+    - 0.5
+    - 0.5
+    - 0.5
+    - 0.5
+    - 0.5
+    - 0.5
+    - 0.5
+    - 0.5
+    - 0.5
+    - 0.5
+    - 0.5
+    - 0.5
+    - 0.5
+    covariate_claimants: [12000.0]
+    rate_ref: [0.5]
+    claimant_ref: [12000.0]
+    birth_elasticity_rate: [0.0]
+    birth_elasticity_claimant: [0.0]
+    death_elasticity_rate: [0.0]
+    deterministic: [1.0]
+  init_state_values: [
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+  ]
+  seed: 7001
+  state_width: 60
+  state_history_depth: 2
+init_time_value: 0.0
+timesteps_history_depth: 2
