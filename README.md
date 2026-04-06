@@ -1,4 +1,4 @@
-# Business survival & support policy simulation — project report
+# Business survival & support policy simulation
 
 **Stack:** [stochadex](https://github.com/umbralcalc/stochadex) · Go · ONS business demography · Companies House bulk data · NOMIS / Bank of England panels
 
