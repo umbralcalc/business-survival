@@ -227,10 +227,6 @@ Further citations (Enterprise Zone evaluations, rates consultations, etc.) remai
 
 ---
 
-## 8. Licence and contributing
+## 8. Contributing
 
 Conventions for stochadex iterations, YAML config, and tests are in **`CLAUDE.md`**. For iteration implementations, follow **`simulator.Iteration`**: **`Configure`** once, **`Iterate`** must not mutate `params`, return state of width **`StateWidth`**.
-
----
-
-*Report revision aligns README with the implemented pipeline and committed example output `dat/evaluate_hull.json`. Regenerate numbers with `cmd/evaluate` after changing data or parameters.*
