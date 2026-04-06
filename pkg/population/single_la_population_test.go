@@ -195,6 +195,69 @@ func runPopulationSteps(
 	return vals[len(vals)-1]
 }
 
+func TestSingleLA_policyDeathScaleRaisesSurvival(t *testing.T) {
+	path := repoRootDat(t)
+	surv, err := LoadSurvivalFracsFromONSJSON(path, "K02000001", 2019)
+	if err != nil {
+		t.Fatal(err)
+	}
+	cohort := 10_000.0
+	base := constCovariateParams(120, 0.5, 15000)
+	base["survival_fracs"] = surv
+	withPolicy := make(map[string][]float64)
+	for k, v := range base {
+		withPolicy[k] = v
+	}
+	withPolicy["policy_death_hazard_scale"] = []float64{0.85}
+
+	lastBase := runPopulationSteps(base, cohort, 42, 60)
+	lastPol := runPopulationSteps(withPolicy, cohort, 42, 60)
+	if sumState(lastPol) <= sumState(lastBase) {
+		t.Fatalf("policy lowering hazard should increase survivors: base=%f policy=%f",
+			sumState(lastBase), sumState(lastPol))
+	}
+}
+
+func TestSingleLA_distressBoostRaisesDeaths(t *testing.T) {
+	base := constCovariateParams(120, 0.5, 15000)
+	surv := []float64{0.946, 0.747, 0.559, 0.45, 0.384}
+	base["survival_fracs"] = surv
+	dist := make(map[string][]float64)
+	for k, v := range base {
+		dist[k] = v
+	}
+	boost := make([]float64, 120)
+	for i := range boost {
+		boost[i] = 0.15
+	}
+	dist["distress_hazard_boost"] = boost
+
+	lastBase := runPopulationSteps(base, 10_000, 7, 60)
+	lastDist := runPopulationSteps(dist, 10_000, 7, 60)
+	if sumState(lastDist) >= sumState(lastBase) {
+		t.Fatalf("distress should reduce survivors: base=%f dist=%f", sumState(lastBase), sumState(lastDist))
+	}
+}
+
+func TestSingleLA_policyBirthScaleRaisesStock(t *testing.T) {
+	base := constCovariateParams(36, 0.5, 10000)
+	base["base_birth_rates"] = []float64{10}
+	base["deterministic"] = []float64{1}
+	withPolicy := make(map[string][]float64)
+	for k, v := range base {
+		withPolicy[k] = v
+	}
+	withPolicy["policy_birth_scale"] = []float64{1.2}
+
+	lastBase := runPopulationSteps(base, 0, 1, 36)
+	// cohort 0: only births accumulate
+	lastPol := runPopulationSteps(withPolicy, 0, 1, 36)
+	if sumState(lastPol) <= sumState(lastBase) {
+		t.Fatalf("higher birth policy should raise stock base=%f pol=%f",
+			sumState(lastBase), sumState(lastPol))
+	}
+}
+
 func TestSingleLA_StochasticCohortMeanNearONS(t *testing.T) {
 	path := repoRootDat(t)
 	surv, err := LoadSurvivalFracsFromONSJSON(path, "K02000001", 2019)

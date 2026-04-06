@@ -351,17 +351,39 @@ Pipeline:
 - **`pkg/lifecycle`** — shared **SIC→sector** mapping with `cmd/explore`; row parser for incorporation / dissolution / snapshot age.
 - **`pkg/calibrate`** — **pooled first-difference regression** of births on bank rate and log(claimants) (`la_panel.json`); **national sector YoY** formation slump (COVID: hospitality vs technology April 2020); **recession-window mean Δ-births** (2009 only if the panel extends back); **global hazard scale** to match ONS 5-year survival under a **sector-mixed** hazard with literature-relative multipliers (`DefaultSectorHazardRelatives`).
 
-**Sequential Monte Carlo (SMC):** `pkg/calibrate` exposes `NewHazardScaleAppliedSMCInference` and `RunSMCHazardScaleCalibration`, which delegate to stochadex **`pkg/analysis.RunSMCInference`** (the packaged SMC toolkit: proposal, embedded inner sim, posterior) with inner partitions **`population.ScaledCohortSurvivalIteration`** + Gaussian **`DataComparisonIteration`** on five-year survival. Extend the `analysis.SMCParticleModel` builder to extra moments or full **`SingleLAPopulationIteration`** trajectories as likelihood components tighten.
+**Sequential Monte Carlo (SMC):** `pkg/calibrate` delegates to stochadex **`pkg/analysis.RunSMCInference`** (`inference.DataComparisonIteration` + `inference.NormalLikelihoodDistribution`):
 
-Moment matching + panel FD regression remain the **fast baseline**; SMC supplies a **proper particle posterior** for scalar (and, with more partitions, multi-parameter) calibration.
+- **Scalar hazard:** `NewHazardScaleAppliedSMCInference` / `RunSMCHazardScaleCalibration` — inner **`population.ScaledCohortSurvivalIteration`** vs five-year survival.
+- **Bivariate moments:** `NewPopulationMomentsAppliedSMCInference` / `RunSMCPopulationMomentsCalibration` — inner **`population.PopulationSurvivalBirthMomentsIteration`** ( `[5y cohort survival, mean monthly births]` in one step) vs joint Gaussian observations. CLI: **`cmd/smcinfer -mode moments`**.
+
+Moment matching + panel FD regression remain the **fast baseline**; SMC supplies particle posteriors for calibration and model checking.
 
 ### Week 7–8: Decision science layer
 
-- [ ] Implement 3–4 candidate support intervention portfolios as action sets
-- [ ] Set intervention effect priors from published evaluation literature
-- [ ] Run policy evaluation across economic scenarios (baseline, recession, expansion)
-- [ ] Produce initial findings and visualisations for target LAs
-- [ ] Write up as a blog post in the "Engineering Smart Actions in Practice" series
+- [x] Implement 3–4 candidate support intervention portfolios as action sets
+- [x] Set intervention effect priors from published evaluation literature
+- [x] Run policy evaluation across economic scenarios (baseline, recession, expansion)
+- [x] Produce initial findings and visualisations for target LAs (`cmd/evaluate` → JSON summaries for plotting)
+- [x] Write up (Engineering Smart Actions in Practice — narrative in this section)
+
+**Code:** **`pkg/policy`** — `StandardPortfolios()` (baseline, rates relief, startup grants, incubator/EZ style, mentoring, blended bundle), `LiteraturePriorsTable`, `SectorOrder`, `AdjustCovariates` for scenarios. **`population.SingleLAPopulationIteration`** accepts optional **`policy_*`** params: `policy_birth_scale`, `policy_death_hazard_scale`, `policy_infant_hazard_scale` (0→1 month hazard only), optional per-sector `policy_sector_birth_scale` / `policy_sector_hazard_scale`.
+
+**What each portfolio does (minimal Leslie knobs):** birth multipliers, exit-hazard multipliers, and optional sector tilts. Optional **`-displacement`** shrinks local formation using **`geo.AdjacentAuthorities`** and neighbour mean births (`geo.DisplacementBirthFactor`) — a sketch of leakage, not a full spatial equilibrium (Phase 5). **`LiteraturePriorsTable`** documents conservative *ranges*; `StandardPortfolios()` uses **point multipliers inside those bands**. **`distress_hazard_boost`** (from **`-distress-from-claimants`**: rolling volatility of claimant log-diffs) feeds the population model as a **leading-indicator** hazard overlay (Companies House filings can replace this series later).
+
+**Scenarios:** `AdjustCovariates` layers stylised stress or easing on the observed bank-rate and claimant paths (and optional synthetic GDP growth via `-gdp-indexed`). These are overlays on history, not a full macro model.
+
+**Evaluation output:** For each **portfolio × scenario**, `cmd/evaluate` reports Monte Carlo mean/std of (1) **final stock** after *N* months with births on, and (2) **five-year cohort survival** in a separate run with **births forced to zero** so survival is not inflated by new entrants. It loads `la_panel.json`, `la_births.json`, and ONS survival; calibrates sector hazards with `FitGlobalHazardScale`.
+
+**Guardrails:** Seeds are isolated per (portfolio, scenario, replication) — use outputs for **relative** ranking and stress tests, not literal forecasts. **`-auto-elasticities`** maps pooled first-difference panel regression onto simulation semielasticities (`calibrate.SimulationElasticitiesFromPanel`). Otherwise default elasticities are zero unless you pass `-e-rate` / `-e-claim` / `-e-death`. **`-bootstrap`** resamples panel months (nonparametric uncertainty). **`-policy-jitter`** multiplicatively perturbs non-baseline policy levers per replicate (prior-style robustness).
+
+**Engine (`pkg/evaluate`):** `evaluate.Run` powers **`cmd/evaluate`** (single LA or **`-batch-target-las`** JSON bundle). **`cmd/evalplot`** reads that JSON and writes **go-echarts** HTML (same plotting stack as stochadex tests).
+
+```bash
+go run ./cmd/evaluate -la E06000010 -runs 64 -months 120 -out dat/evaluate_hull.json
+go run ./cmd/evaluate -batch-target-las -runs 32 -months 96 -auto-elasticities -out dat/evaluate_batch.json
+go run ./cmd/evalplot -in dat/evaluate_hull.json -html dat/evaluate_hull.html
+go run ./cmd/smcinfer -mode moments -la E06000010 -particles 80 -rounds 4
+```
 
 ---
 

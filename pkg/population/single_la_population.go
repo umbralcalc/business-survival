@@ -27,6 +27,15 @@ import (
 //   - death_elasticity_rate: log-linear hazard scaling (applied to all sectors).
 //   - deterministic: optional [1] for mean-field (no Poisson/binomial noise); default stochastic.
 //
+// Optional policy layers (interventions — all default to no effect when absent):
+//   - policy_birth_scale: scalar ≥0 multiplies births after economic birthMult (default 1).
+//   - policy_death_hazard_scale: scalar ≥0 multiplies effective monthly hazard (after deathMult; default 1).
+//   - policy_sector_birth_scale: length nSectors, per-sector birth multiplier (default 1 each).
+//   - policy_sector_hazard_scale: length nSectors, per-sector hazard multiplier (default 1 each).
+//   - policy_infant_hazard_scale: scalar applied only to the hazard for age 0→1 month (default 1).
+//   - distress_hazard_boost: optional time series (same indexing as bank rates); death hazard
+//     multiplier is further scaled by (1 + boost[t]) when boost ≥ 0 (leading-indicator / distress).
+//
 // Stochastic sampling uses the partition Seed from settings (re-initialised in Configure).
 type SingleLAPopulationIteration struct {
 	nSectors int
@@ -167,6 +176,34 @@ func (s *SingleLAPopulationIteration) economicMultipliers(
 	return birthMult, deathMult
 }
 
+func policyScalarParam(params *simulator.Params, key string, def float64) float64 {
+	xs, ok := params.GetOk(key)
+	if !ok || len(xs) == 0 {
+		return def
+	}
+	v := xs[0]
+	if v < 0 || math.IsNaN(v) {
+		return def
+	}
+	return v
+}
+
+func (s *SingleLAPopulationIteration) policyPerSector(
+	params *simulator.Params,
+	key string,
+	sec int,
+) float64 {
+	xs, ok := params.GetOk(key)
+	if !ok || len(xs) != s.nSectors {
+		return 1.0
+	}
+	v := xs[sec]
+	if v <= 0 || math.IsNaN(v) {
+		return 1.0
+	}
+	return v
+}
+
 func (s *SingleLAPopulationIteration) poissonSample(lambda float64) float64 {
 	if lambda <= 0 {
 		return 0
@@ -200,6 +237,15 @@ func (s *SingleLAPopulationIteration) Iterate(
 	hist := stateHistories[partitionIndex]
 	tIdx := s.covariateIndex(params, timestepsHistory)
 	birthMult, deathMult := s.economicMultipliers(params, tIdx)
+	if boost, ok := params.GetOk("distress_hazard_boost"); ok && len(boost) > 0 {
+		b := pickSeries(boost, tIdx)
+		if !math.IsNaN(b) && b > 0 {
+			deathMult *= 1.0 + b
+		}
+	}
+	policyBirth := policyScalarParam(params, "policy_birth_scale", 1.0)
+	policyDeath := policyScalarParam(params, "policy_death_hazard_scale", 1.0)
+	infantHazard := policyScalarParam(params, "policy_infant_hazard_scale", 1.0)
 
 	// Clear scratch (next state).
 	for i := range s.scratch {
@@ -207,8 +253,10 @@ func (s *SingleLAPopulationIteration) Iterate(
 	}
 
 	for sec := 0; sec < s.nSectors; sec++ {
+		secBirth := s.policyPerSector(params, "policy_sector_birth_scale", sec)
+		secHazard := s.policyPerSector(params, "policy_sector_hazard_scale", sec)
 		baseBirth := params.GetIndex("base_birth_rates", sec)
-		lambda := baseBirth * birthMult
+		lambda := baseBirth * birthMult * policyBirth * secBirth
 		var births float64
 		if s.deterministic {
 			births = lambda
@@ -220,7 +268,10 @@ func (s *SingleLAPopulationIteration) Iterate(
 		// Age 1..58: inflow from younger bucket.
 		for age := 1; age <= 58; age++ {
 			prev := hist.Values.At(0, s.offset(sec, age-1))
-			h := s.monthlyHazard[sec][age-1] * deathMult
+			h := s.monthlyHazard[sec][age-1] * deathMult * policyDeath * secHazard
+			if age == 1 {
+				h *= infantHazard
+			}
 			if h < 0 {
 				h = 0
 			}
@@ -238,7 +289,7 @@ func (s *SingleLAPopulationIteration) Iterate(
 		}
 
 		// Top bucket (59): from bucket 58 and survivors already in 59.
-		h58 := s.monthlyHazard[sec][58] * deathMult
+		h58 := s.monthlyHazard[sec][58] * deathMult * policyDeath * secHazard
 		if h58 < 0 {
 			h58 = 0
 		}
@@ -254,7 +305,7 @@ func (s *SingleLAPopulationIteration) Iterate(
 			into59 = s.binomialSample(prev58, p58)
 		}
 
-		h59 := s.monthlyHazard[sec][59] * deathMult
+		h59 := s.monthlyHazard[sec][59] * deathMult * policyDeath * secHazard
 		if h59 < 0 {
 			h59 = 0
 		}
