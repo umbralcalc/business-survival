@@ -91,3 +91,39 @@ func TestPopulationMoments_BirthScaleLinear(t *testing.T) {
 		t.Fatalf("mean monthly births: got %v want 20", out[1])
 	}
 }
+
+func TestPopulationSurvivalBirthMomentsIteration_RunWithHarnesses(t *testing.T) {
+	surv := []float64{0.946, 0.747, 0.559, 0.45, 0.384}
+	mMap := map[string][]float64{
+		"survival_fracs":         surv,
+		"base_birth_rate_scalar": {0},
+		"param_values":           {1.0, 0},
+	}
+	settings := &simulator.Settings{
+		Iterations: []simulator.IterationSettings{
+			{
+				Name:              "moments",
+				Params:            simulator.Params{Map: mMap},
+				InitStateValues:   []float64{0, 0},
+				StateWidth:        2,
+				StateHistoryDepth: 2,
+				Seed:              99,
+			},
+		},
+		InitTimeValue:         0,
+		TimestepsHistoryDepth: 2,
+	}
+	settings.Init()
+	impl := &simulator.Implementations{
+		Iterations:      []simulator.Iteration{&PopulationSurvivalBirthMomentsIteration{}},
+		OutputCondition: &simulator.NilOutputCondition{},
+		OutputFunction:  &simulator.NilOutputFunction{},
+		TerminationCondition: &simulator.NumberOfStepsTerminationCondition{
+			MaxNumberOfSteps: 8,
+		},
+		TimestepFunction: &simulator.ConstantTimestepFunction{Stepsize: 1.0},
+	}
+	if err := simulator.RunWithHarnesses(settings, impl); err != nil {
+		t.Fatal(err)
+	}
+}

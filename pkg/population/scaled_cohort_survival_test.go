@@ -35,3 +35,37 @@ func TestScaledCohortSurvivalIteration_UnityScale(t *testing.T) {
 		t.Fatalf("got %f want %f", out[0], want)
 	}
 }
+
+func TestScaledCohortSurvivalIteration_RunWithHarnesses(t *testing.T) {
+	surv := []float64{0.946, 0.747, 0.559, 0.45, 0.384}
+	settings := &simulator.Settings{
+		Iterations: []simulator.IterationSettings{
+			{
+				Name: "scaled",
+				Params: simulator.NewParams(map[string][]float64{
+					"survival_fracs": surv,
+					"param_values":   {1.0},
+				}),
+				InitStateValues:   []float64{0},
+				Seed:              42,
+				StateWidth:        1,
+				StateHistoryDepth: 2,
+			},
+		},
+		InitTimeValue:         0,
+		TimestepsHistoryDepth: 2,
+	}
+	settings.Init()
+	impl := &simulator.Implementations{
+		Iterations:      []simulator.Iteration{&ScaledCohortSurvivalIteration{}},
+		OutputCondition: &simulator.NilOutputCondition{},
+		OutputFunction:  &simulator.NilOutputFunction{},
+		TerminationCondition: &simulator.NumberOfStepsTerminationCondition{
+			MaxNumberOfSteps: 8,
+		},
+		TimestepFunction: &simulator.ConstantTimestepFunction{Stepsize: 1.0},
+	}
+	if err := simulator.RunWithHarnesses(settings, impl); err != nil {
+		t.Fatal(err)
+	}
+}
