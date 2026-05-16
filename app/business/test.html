@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>dexetera — business (local preview)</title>
+<style>
+body { margin: 0; padding: 2em 1.5em; max-width: 900px; margin: 0 auto;
+       font-family: system-ui, -apple-system, sans-serif; color: #2c3e50; }
+h1 { font-size: 2.4em; font-weight: 600; letter-spacing: -0.02em; margin: 0 0 0.6em; }
+header p { margin: 0 0 1.4em; opacity: 0.65; font-size: 0.95em; }
+#dexetera-business .business-selector { display: flex; flex-direction: column; gap: 0.4em; font-size: 1rem; margin-bottom: 0.6em; }#dexetera-business .business-selector-label { color: #2c3e50; font-weight: 600; }#dexetera-business .business-options { display: flex; flex-direction: column; gap: 0.3em; }#dexetera-business .business-options label { display: flex; align-items: center; gap: 0.4em; color: #2c3e50; cursor: pointer; }#dexetera-business .business-options input[type="radio"] { accent-color: #b0447a; }</style>
+</head>
+<body>
+<header>
+<h1>business</h1>
+<p>Local preview. The embeddable snippet is in widget.html.</p>
+</header>
+<div id="dexetera-business" class="dexetera-widget">
+<style>
+#dexetera-business { font-family: system-ui, -apple-system, sans-serif; color: #2c3e50; line-height: 1.5; }
+#dexetera-business .description { margin: 0 0 1em; color: #2c3e50; opacity: 0.85; font-size: 1rem; }
+#dexetera-business code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 0.95em; background: rgba(60,120,216,0.08); padding: 0.05em 0.3em; border-radius: 3px; }
+#dexetera-business .dashboard { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 0.9em; }
+#dexetera-business .panel { border: 1px solid #2c3e50; border-radius: 6px; padding: 0.8em 0.9em; background: #ffffff; display: flex; flex-direction: column; gap: 0.6em; box-sizing: border-box; }
+#dexetera-business .panel-title { font-weight: 600; color: #2c3e50; font-size: 1rem; }
+#dexetera-business canvas { display: block; width: 100%; max-width: 640px; height: auto; aspect-ratio: 640 / 480; margin: 0 auto; background: #ffffff; }
+#dexetera-business .panel-readout { margin: 0; font-size: 1rem; color: #2c3e50; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+#dexetera-business .slider { display: grid; grid-template-columns: 1fr 80px; grid-template-areas: "name readout" "input input"; align-items: center; gap: 0.3em 1em; font-size: 1rem; }
+#dexetera-business .slider-name { grid-area: name; color: #2c3e50; }
+#dexetera-business .slider input[type="range"] { grid-area: input; width: 100%; accent-color: #b0447a; }
+#dexetera-business .slider-readout { grid-area: readout; text-align: right; color: #b0447a; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+#dexetera-business .panel-actions { display: flex; flex-wrap: wrap; gap: 0.6em; margin-top: 0.4em; }
+#dexetera-business button.button-secondary { cursor: pointer; border: 1px solid #2c3e50; background: #ffffff; color: #2c3e50; padding: 0.4em 0.85em; border-radius: 6px; font-size: 1rem; font-family: inherit; }
+#dexetera-business button.button-secondary:hover { background: #f4f6f9; }
+#dexetera-business .status { margin: 1em 0 0; text-align: right; font-size: 0.9em; color: #2c3e50; opacity: 0.6; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+</style>
+<p class="description">Small business support policy support: pick a portfolio and macro scenario; the simulator (calibrated to ONS and Companies House data for Kingston upon Hull) shows how five-year cohort survival and register stock shift across the six candidate portfolios over a 10-year horizon. This is a research model fitted to open data, not a policy-design tool.</p>
+<div class="dashboard">
+    <section class="panel">
+        <div class="panel-title">Simulation</div>
+        <canvas width="640" height="480"></canvas>
+        
+        <p class="panel-readout" data-readout="display_progress">&nbsp;</p>
+        
+        <p class="panel-readout" data-readout="display_outcomes">&nbsp;</p>
+        
+    </section>
+    
+    <section class="panel">
+        <div class="panel-title">Live controls</div>
+        
+        <div class="business-selector"><span class="business-selector-label">Support portfolio</span><div class="business-options"><label><input type="radio" name="business-portfolio" value="0" checked>No additional intervention</label><label><input type="radio" name="business-portfolio" value="1">Rates & cash-flow relief</label><label><input type="radio" name="business-portfolio" value="2">Startup finance & first-year support</label><label><input type="radio" name="business-portfolio" value="3">Incubator / enterprise-zone style</label><label><input type="radio" name="business-portfolio" value="4">Mentoring & peer resilience</label><label><input type="radio" name="business-portfolio" value="5">Blended portfolio (relief + startup + mentoring)</label></div><input type="range" data-slider="portfolio" min="0" max="5" step="1" value="0" style="display:none"><span data-slider-readout="portfolio" style="display:none"></span></div>
+        
+        <div class="business-selector"><span class="business-selector-label">Macro scenario</span><div class="business-options"><label><input type="radio" name="business-scenario" value="0" checked>Baseline macro path</label><label><input type="radio" name="business-scenario" value="1">Recession overlay (+200 bps rates, +15% claimants)</label><label><input type="radio" name="business-scenario" value="2">Expansion overlay (-100 bps rates, -8% claimants)</label></div><input type="range" data-slider="scenario" min="0" max="2" step="1" value="0" style="display:none"><span data-slider-readout="scenario" style="display:none"></span></div>
+        
+        
+        <div class="panel-actions">
+            <button type="button" class="button-secondary" data-reset>Reset simulation</button>
+        </div>
+        
+    </section>
+    
+</div>
+<p class="status" data-status>Loading…</p>
+</div>
+<script>
+(function () {
+    var widget = document.getElementById('dexetera-business');
+    var RUNTIME_BASE = '../runtime/';
+    var WASM_URL = './src/main.wasm';
+    var gameConfig = {"visualization":{"backgroundColor":"#fafafa","canvasHeight":480,"canvasWidth":640,"renderers":[{"partitionName":"","properties":{"color":"#2c3e50","fontSize":22,"text":"Portfolio comparison (survival × stock)","textAlign":"left","x":130,"y":38},"type":"text"},{"partitionName":"","properties":{"color":"#2c3e50","width":1,"x1":130,"x2":550,"y1":210,"y2":210},"type":"line"},{"partitionName":"","properties":{"color":"#2c3e50","width":1,"x1":130,"x2":130,"y1":60,"y2":210},"type":"line"},{"partitionName":"","properties":{"color":"#2c3e50","width":1,"x1":130,"x2":130,"y1":210,"y2":214},"type":"line"},{"partitionName":"","properties":{"color":"#2c3e50","fontSize":18,"text":"34%","textAlign":"center","x":130,"y":232},"type":"text"},{"partitionName":"","properties":{"color":"#2c3e50","width":1,"x1":214,"x2":214,"y1":210,"y2":214},"type":"line"},{"partitionName":"","properties":{"color":"#2c3e50","fontSize":18,"text":"36%","textAlign":"center","x":214,"y":232},"type":"text"},{"partitionName":"","properties":{"color":"#2c3e50","width":1,"x1":298,"x2":298,"y1":210,"y2":214},"type":"line"},{"partitionName":"","properties":{"color":"#2c3e50","fontSize":18,"text":"38%","textAlign":"center","x":298,"y":232},"type":"text"},{"partitionName":"","properties":{"color":"#2c3e50","width":1,"x1":382,"x2":382,"y1":210,"y2":214},"type":"line"},{"partitionName":"","properties":{"color":"#2c3e50","fontSize":18,"text":"40%","textAlign":"center","x":382,"y":232},"type":"text"},{"partitionName":"","properties":{"color":"#2c3e50","width":1,"x1":466,"x2":466,"y1":210,"y2":214},"type":"line"},{"partitionName":"","properties":{"color":"#2c3e50","fontSize":18,"text":"42%","textAlign":"center","x":466,"y":232},"type":"text"},{"partitionName":"","properties":{"color":"#2c3e50","width":1,"x1":549,"x2":549,"y1":210,"y2":214},"type":"line"},{"partitionName":"","properties":{"color":"#2c3e50","fontSize":18,"text":"44%","textAlign":"center","x":549,"y":232},"type":"text"},{"partitionName":"","properties":{"color":"#2c3e50","width":1,"x1":126,"x2":130,"y1":199,"y2":199},"type":"line"},{"partitionName":"","properties":{"color":"#2c3e50","fontSize":18,"text":"5400","textAlign":"right","x":122,"y":205},"type":"text"},{"partitionName":"","properties":{"color":"#2c3e50","width":1,"x1":126,"x2":130,"y1":167,"y2":167},"type":"line"},{"partitionName":"","properties":{"color":"#2c3e50","fontSize":18,"text":"5700","textAlign":"right","x":122,"y":173},"type":"text"},{"partitionName":"","properties":{"color":"#2c3e50","width":1,"x1":126,"x2":130,"y1":135,"y2":135},"type":"line"},{"partitionName":"","properties":{"color":"#2c3e50","fontSize":18,"text":"6000","textAlign":"right","x":122,"y":141},"type":"text"},{"partitionName":"","properties":{"color":"#2c3e50","width":1,"x1":126,"x2":130,"y1":102,"y2":102},"type":"line"},{"partitionName":"","properties":{"color":"#2c3e50","fontSize":18,"text":"6300","textAlign":"right","x":122,"y":108},"type":"text"},{"partitionName":"","properties":{"color":"#2c3e50","width":1,"x1":126,"x2":130,"y1":70,"y2":70},"type":"line"},{"partitionName":"","properties":{"color":"#2c3e50","fontSize":18,"text":"6600","textAlign":"right","x":122,"y":76},"type":"text"},{"partitionName":"","properties":{"color":"#2c3e50","fontSize":15,"text":"5-yr cohort survival","textAlign":"center","x":340,"y":256},"type":"text"},{"partitionName":"portfolio_dots","properties":{"anchor":"topLeft","defaultHeight":0,"defaultWidth":0,"fillColor":"#7d8aa1"},"type":"rectangleSet"},{"partitionName":"portfolio_highlight","properties":{"anchor":"topLeft","defaultHeight":0,"defaultWidth":0,"fillColor":"#b0447a"},"type":"rectangleSet"},{"partitionName":"","properties":{"color":"#2c3e50","fontSize":20,"text":"none","textAlign":"left","x":282,"y":169},"type":"text"},{"partitionName":"","properties":{"color":"#2c3e50","fontSize":20,"text":"relief","textAlign":"right","x":428,"y":124},"type":"text"},{"partitionName":"","properties":{"color":"#2c3e50","fontSize":20,"text":"startup","textAlign":"left","x":286,"y":123},"type":"text"},{"partitionName":"","properties":{"color":"#2c3e50","fontSize":20,"text":"incubator","textAlign":"left","x":330,"y":104},"type":"text"},{"partitionName":"","properties":{"color":"#2c3e50","fontSize":20,"text":"mentoring","textAlign":"right","x":362,"y":132},"type":"text"},{"partitionName":"","properties":{"color":"#2c3e50","fontSize":20,"text":"blend","textAlign":"left","x":449,"y":77},"type":"text"},{"partitionName":"","properties":{"color":"#2c3e50","fontSize":22,"text":"Stock trajectory","textAlign":"left","x":70,"y":290},"type":"text"},{"partitionName":"","properties":{"color":"#2c3e50","width":1,"x1":70,"x2":290,"y1":430,"y2":430},"type":"line"},{"partitionName":"","properties":{"color":"#2c3e50","width":1,"x1":70,"x2":70,"y1":310,"y2":430},"type":"line"},{"partitionName":"stock_trajectory","properties":{"color":"#3c78d8","height":120,"lineWidth":2,"width":220,"x":70,"y":310},"type":"lineChart"},{"partitionName":"","properties":{"color":"#2c3e50","fontSize":15,"text":"firms on register","textAlign":"left","x":70,"y":452},"type":"text"},{"partitionName":"","properties":{"color":"#2c3e50","fontSize":22,"text":"Cohort survival","textAlign":"left","x":380,"y":290},"type":"text"},{"partitionName":"","properties":{"color":"#2c3e50","width":1,"x1":380,"x2":600,"y1":430,"y2":430},"type":"line"},{"partitionName":"","properties":{"color":"#2c3e50","width":1,"x1":380,"x2":380,"y1":310,"y2":430},"type":"line"},{"partitionName":"cohort_trajectory","properties":{"color":"#3c78d8","height":120,"lineWidth":2,"width":220,"x":380,"y":310},"type":"lineChart"},{"partitionName":"","properties":{"color":"#2c3e50","fontSize":15,"text":"fraction of 5000-firm cohort still active","textAlign":"left","x":380,"y":452},"type":"text"}],"updateIntervalMs":0},"sliders":[{"name":"portfolio","partition":"policy_action","valueIndex":0,"default":0,"decimals":3},{"name":"scenario","partition":"policy_action","valueIndex":1,"default":0,"decimals":3}],"readouts":[{"partition":"display_progress","template":"month {v0} of 120 · live stock {v1}","decimals":2},{"partition":"display_outcomes","template":"reference: survival {v0}% ± {v1}% · final stock {v2} ± {v3} (64 reps)","decimals":1}],"showReset":true,"driver":{"kind":"inline","options":{"intervalMs":20}}};
+
+    // Load the renderer script lazily, sharing one promise across every
+    // dexetera widget on the same page.
+    function ensureRenderer() {
+        if (self.dexetera && self.dexetera.createRenderer) return Promise.resolve();
+        if (self.__dexeteraLoading) return self.__dexeteraLoading;
+        self.__dexeteraLoading = new Promise(function (resolve, reject) {
+            var s = document.createElement('script');
+            s.src = RUNTIME_BASE + 'renderer.js';
+            s.onload = function () { resolve(); };
+            s.onerror = function () { reject(new Error('failed to load ' + s.src)); };
+            document.head.appendChild(s);
+        });
+        return self.__dexeteraLoading;
+    }
+
+    function $(sel) { return widget.querySelector(sel); }
+    function $$(sel) { return widget.querySelectorAll(sel); }
+
+    function setStatus(msg) {
+        var el = $('[data-status]');
+        if (el) el.textContent = msg;
+    }
+
+    var slidersByPartition = (function () {
+        var grouped = {};
+        for (var i = 0; i < gameConfig.sliders.length; i++) {
+            var s = gameConfig.sliders[i];
+            if (!grouped[s.partition]) grouped[s.partition] = [];
+            grouped[s.partition].push(s);
+        }
+        return grouped;
+    })();
+
+    var worker = null;
+
+    function publishActions() {
+        for (var i = 0; i < gameConfig.sliders.length; i++) {
+            var s = gameConfig.sliders[i];
+            var input = $('[data-slider="' + s.name + '"]');
+            var ro = $('[data-slider-readout="' + s.name + '"]');
+            if (input && ro) ro.textContent = parseFloat(input.value).toFixed(s.decimals);
+        }
+        if (!worker) return;
+        var partitions = {};
+        for (var partition in slidersByPartition) {
+            if (!Object.prototype.hasOwnProperty.call(slidersByPartition, partition)) continue;
+            var group = slidersByPartition[partition];
+            var maxIdx = -1;
+            for (var j = 0; j < group.length; j++) maxIdx = Math.max(maxIdx, group[j].valueIndex);
+            var values = new Array(maxIdx + 1);
+            for (var k = 0; k <= maxIdx; k++) values[k] = 0;
+            for (var l = 0; l < group.length; l++) {
+                var sl = group[l];
+                var inp = $('[data-slider="' + sl.name + '"]');
+                values[sl.valueIndex] = parseFloat(inp ? inp.value : sl.default);
+            }
+            partitions[partition] = values;
+        }
+        worker.postMessage({ action: 'setActions', partitions: partitions });
+    }
+
+    function applyReadout(template, decimals, partitionState) {
+        var s = template;
+        s = s.replace(/\{t\}/g, Math.floor(partitionState.timesteps));
+        s = s.replace(/\{v(\d*)\}/g, function (_, idx) {
+            var i = idx === '' ? 0 : parseInt(idx, 10);
+            var v = partitionState.state.values[i];
+            return (v === undefined) ? '' : v.toFixed(decimals);
+        });
+        return s;
+    }
+
+    function ensureWorkerUrl() {
+        if (self.__dexeteraWorkerUrl) return Promise.resolve(self.__dexeteraWorkerUrl);
+        if (self.__dexeteraWorkerLoading) return self.__dexeteraWorkerLoading;
+        var BASE_ABS = new URL(RUNTIME_BASE, document.baseURI).href;
+        self.__dexeteraWorkerLoading = fetch(BASE_ABS + 'worker.js')
+            .then(function (r) {
+                if (!r.ok) throw new Error('failed to fetch worker.js: ' + r.status);
+                return r.text();
+            })
+            .then(function (src) {
+                var shim = '(function(){var BASE=' + JSON.stringify(BASE_ABS) +
+                    ';var orig=self.importScripts;self.importScripts=function(){' +
+                    'var args=Array.prototype.map.call(arguments,function(u){' +
+                    'return new URL(u,BASE).href;});return orig.apply(self,args);};})();\n';
+                var blob = new Blob([shim, src], { type: 'application/javascript' });
+                self.__dexeteraWorkerUrl = URL.createObjectURL(blob);
+                return self.__dexeteraWorkerUrl;
+            });
+        return self.__dexeteraWorkerLoading;
+    }
+
+    function startWorker(renderer) {
+        if (worker) worker.terminate();
+        ensureWorkerUrl().then(function (workerUrl) {
+        worker = new Worker(workerUrl);
+        worker.onmessage = function (e) {
+            var msg = e.data;
+            if (msg.type === 'partitionState') {
+                renderer.update(msg.data);
+                renderer.render();
+                for (var i = 0; i < gameConfig.readouts.length; i++) {
+                    var r = gameConfig.readouts[i];
+                    if (r.partition !== msg.data.partitionName) continue;
+                    var el = $('[data-readout="' + r.partition + '"]');
+                    if (el) el.textContent = applyReadout(r.template, r.decimals, msg.data);
+                }
+                if (worker && msg.data.timesteps >= 120) { worker.terminate(); worker = null; setStatus('10-year simulation complete. Use Reset to rerun.'); }
+            } else if (msg.type === 'status') {
+                setStatus(msg.data);
+                if (msg.data === 'inline driver ready') publishActions();
+            } else if (msg.type === 'error') {
+                console.error('dexetera worker error:', msg.data);
+                setStatus('Error: ' + msg.data);
+            }
+        };
+        worker.onerror = function (err) {
+            console.error('dexetera worker error:', err);
+            setStatus('Worker error: ' + err.message);
+        };
+        worker.postMessage({
+            action: 'start',
+            wasmBinary: new URL(WASM_URL, document.baseURI).href,
+            driver: gameConfig.driver,
+        });
+        publishActions();
+        }).catch(function (err) {
+            console.error(err);
+            setStatus('Failed to load dexetera worker: ' + err.message);
+        });
+    }
+
+    ensureRenderer().then(function () {
+        var canvas = $('canvas');
+        var renderer = self.dexetera.createRenderer(canvas, gameConfig.visualization);
+
+        for (var i = 0; i < gameConfig.sliders.length; i++) {
+            var s = gameConfig.sliders[i];
+            var el = $('[data-slider="' + s.name + '"]');
+            if (el) el.addEventListener('input', publishActions);
+        }
+        if (gameConfig.showReset) {
+            var btn = $('[data-reset]');
+            if (btn) btn.addEventListener('click', function () { startWorker(renderer); });
+        }
+        publishActions();
+        startWorker(renderer);
+    }).catch(function (err) {
+        console.error(err);
+        setStatus('Failed to load dexetera runtime: ' + err.message);
+    });
+})();
+</script>
+
+</body>
+</html>
+
+<script>
+(function () {
+    var widget = document.getElementById('dexetera-business');
+    if (!widget) return;
+    var resetBtn = widget.querySelector('[data-reset]');
+
+    function wireGroup(radioName, sliderName) {
+        var radios = widget.querySelectorAll('input[name="' + radioName + '"]');
+        var slider = widget.querySelector('[data-slider="' + sliderName + '"]');
+        function applyValue(value) {
+            if (slider) {
+                slider.value = String(value);
+                slider.dispatchEvent(new Event('input', { bubbles: true }));
+            }
+        }
+        for (var i = 0; i < radios.length; i++) {
+            radios[i].addEventListener('change', function (e) {
+                applyValue(parseInt(e.target.value, 10));
+                if (resetBtn) resetBtn.click();
+            });
+        }
+        var initial = 0;
+        for (var j = 0; j < radios.length; j++) {
+            if (radios[j].checked) { initial = parseInt(radios[j].value, 10); break; }
+        }
+        // Initial state — sync slider but do NOT click Reset (the
+        // dexetera IIFE handles the very first sim start; clicking
+        // Reset on init would race the renderer load).
+        applyValue(initial);
+    }
+
+    wireGroup('business-portfolio', 'portfolio');
+    wireGroup('business-scenario', 'scenario');
+})();
+</script>
