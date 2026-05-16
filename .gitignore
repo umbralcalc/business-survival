@@ -2,23 +2,4 @@
 
 dat/*
 
-explore
-!cmd/explore/
 
-evaluate
-!cmd/evaluate/
-
-evalplot
-!cmd/evalplot/
-
-parse-ons
-!cmd/parse-ons/
-
-analyse
-!cmd/analyse/
-
-lifecycles
-!cmd/lifecycles/
-
-smcinfer
-!cmd/smcinfer/
