@@ -223,6 +223,8 @@ This list is the intentional bridge from **what the repository demonstrates toda
 | [Bank of England statistics](https://www.bankofengland.co.uk/statistics) | Bank Rate. |
 | [ONS NSPL](https://www.ons.gov.uk/methodology/geography/geographicalproducts/namesandcodes) | Postcode → local authority for CH join. |
 
+ONS and Companies House data is Crown copyright and contains public sector information licensed under the [Open Government Licence v3.0](https://www.nationalarchives.gov.uk/doc/open-government-licence/version/3/). The MIT licence covers this repository's code, not the underlying data.
+
 Further citations (Enterprise Zone evaluations, rates consultations, etc.) remain valuable background for priors—see `pkg/policy/LiteraturePriorsTable` in code.
 
 ---
