@@ -73,10 +73,16 @@ go build ./...
 go test -count=1 ./...
 ```
 
-### 4.3 Run the stochadex example (YAML-generated partition)
+### 4.3 Run the population model
+
+The single-LA population model (`population.SingleLAPopulationIteration`) is a bespoke
+Go iteration — a 60-age Leslie/Lefkovitch cohort model with stochastic sampling, policy
+layers, economic elasticities and time-varying covariates. It embeds the stochadex engine
+as a library rather than being a config-as-data model, so it runs through this project's
+own commands (see §4.5), e.g. a forward evaluation:
 
 ```bash
-go run github.com/umbralcalc/stochadex/cmd/stochadex --config cfg/single_la_population.yaml
+go run ./cmd/evaluate -la E06000010 -runs 64 -months 120 -out dat/evaluate_output.json
 ```
 
 ### 4.4 Rebuild analysis artefacts (paths are examples)
