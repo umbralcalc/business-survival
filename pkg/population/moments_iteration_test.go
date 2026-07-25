@@ -11,8 +11,8 @@ func TestPopulationMoments_MatchesScaledCohortOnSurvival(t *testing.T) {
 	surv := []float64{0.946, 0.747, 0.559, 0.45, 0.384}
 	scale := 1.05
 	pMap := map[string][]float64{
-		"survival_fracs":            surv,
-		"param_values":              {scale},
+		"survival_fracs": surv,
+		"param_values":   {scale},
 	}
 	set := &simulator.Settings{
 		Iterations: []simulator.IterationSettings{
@@ -33,9 +33,9 @@ func TestPopulationMoments_MatchesScaledCohortOnSurvival(t *testing.T) {
 	outCohort := sc.Iterate(&simulator.Params{Map: pMap}, 0, nil, nil)
 
 	mMap := map[string][]float64{
-		"survival_fracs":          surv,
-		"base_birth_rate_scalar":  {0},
-		"param_values":            {scale, 0},
+		"survival_fracs":         surv,
+		"base_birth_rate_scalar": {0},
+		"param_values":           {scale, 0},
 	}
 	mset := &simulator.Settings{
 		Iterations: []simulator.IterationSettings{

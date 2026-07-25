@@ -26,10 +26,10 @@ import (
 )
 
 type authorityOut struct {
-	AreaCode string `json:"area_code"`
-	AreaName string `json:"area_name"`
+	AreaCode string           `json:"area_code"`
+	AreaName string           `json:"area_name"`
 	Hist     map[string][]int `json:"age_by_sector_month_buckets"`
-	NRows    int            `json:"n_rows"`
+	NRows    int              `json:"n_rows"`
 }
 
 type output struct {

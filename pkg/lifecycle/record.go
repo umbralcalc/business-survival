@@ -5,12 +5,12 @@ import "time"
 // CompanyLifecycle summarises one row of the Companies House bulk product
 // at a fixed CSV snapshot date (live register).
 type CompanyLifecycle struct {
-	CompanyNumber    string
-	AreaCode         string
-	Sector           string
-	Incorporation    time.Time
-	Dissolution      *time.Time
-	CompanyStatus    string
+	CompanyNumber     string
+	AreaCode          string
+	Sector            string
+	Incorporation     time.Time
+	Dissolution       *time.Time
+	CompanyStatus     string
 	AgeMonthsSnapshot int
 	// Censored is true when no dissolution is observed on or before the snapshot
 	// (right-censored lifetime for survival analysis).

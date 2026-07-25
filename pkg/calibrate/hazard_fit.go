@@ -7,12 +7,12 @@ import (
 // DefaultSectorHazardRelatives are literature-style priors: hazard multipliers
 // vs a baseline sector (Professional = 1) before global calibration.
 var DefaultSectorHazardRelatives = map[string]float64{
-	"Professional":  1.0,
-	"Technology":    0.92,
-	"Construction":  1.05,
-	"Retail":        1.1,
-	"Hospitality":   1.28,
-	"Other":         1.0,
+	"Professional": 1.0,
+	"Technology":   0.92,
+	"Construction": 1.05,
+	"Retail":       1.1,
+	"Hospitality":  1.28,
+	"Other":        1.0,
 }
 
 // BlendMonthlyHazard mixes per-sector scaled baseline hazards using live-register

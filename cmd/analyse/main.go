@@ -46,8 +46,8 @@ type LABirthsInput struct {
 type MonthlyRow struct {
 	Month         string  `json:"month"`
 	Births        int     `json:"births"`
-	BankRate      float64 `json:"bank_rate"`       // end-of-month Bank Rate (%)
-	ClaimantCount int     `json:"claimant_count"`  // NOMIS claimant count
+	BankRate      float64 `json:"bank_rate"`      // end-of-month Bank Rate (%)
+	ClaimantCount int     `json:"claimant_count"` // NOMIS claimant count
 }
 
 // LAPanel is the joined time series + correlations for one LA.

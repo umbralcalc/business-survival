@@ -16,14 +16,14 @@ type Portfolio struct {
 	Summary   string
 	BudgetGBP float64 // indicative annual envelope for reporting only
 
-	BirthScale         float64
-	DeathHazardScale   float64
-	InfantHazardScale  float64
-	SectorBirthScale   map[string]float64 // optional per-sector birth multiplier
-	SectorHazardScale  map[string]float64 // optional per-sector hazard multiplier
-	PriorsBirth        *EffectPrior
-	PriorsDeath        *EffectPrior
-	PriorsInfantDeath  *EffectPrior
+	BirthScale        float64
+	DeathHazardScale  float64
+	InfantHazardScale float64
+	SectorBirthScale  map[string]float64 // optional per-sector birth multiplier
+	SectorHazardScale map[string]float64 // optional per-sector hazard multiplier
+	PriorsBirth       *EffectPrior
+	PriorsDeath       *EffectPrior
+	PriorsInfantDeath *EffectPrior
 }
 
 // LiteraturePriorsTable documents evaluation evidence (see README Week 7–8).
@@ -77,62 +77,62 @@ func StandardPortfolios() []Portfolio {
 			Summary: "Calibrated demography + economics only.",
 		},
 		{
-			ID:      "rates_relief",
-			Name:    "Rates & cash-flow relief",
-			Summary: "SBRR-style support tilted to high-fixed-cost sectors.",
-			BudgetGBP:            4_500_000,
-			BirthScale:           1.0,
-			DeathHazardScale:     0.92,
-			InfantHazardScale:    1.0,
-			SectorHazardScale:    map[string]float64{"Hospitality": 0.88, "Retail": 0.94},
-			PriorsDeath:          &LiteraturePriorsTable[0].Prior,
+			ID:                "rates_relief",
+			Name:              "Rates & cash-flow relief",
+			Summary:           "SBRR-style support tilted to high-fixed-cost sectors.",
+			BudgetGBP:         4_500_000,
+			BirthScale:        1.0,
+			DeathHazardScale:  0.92,
+			InfantHazardScale: 1.0,
+			SectorHazardScale: map[string]float64{"Hospitality": 0.88, "Retail": 0.94},
+			PriorsDeath:       &LiteraturePriorsTable[0].Prior,
 		},
 		{
-			ID:      "startup_grants",
-			Name:    "Startup finance & first-year support",
-			Summary: "Formation nudge + stronger first-year continuation.",
-			BudgetGBP:           3_800_000,
-			BirthScale:          1.10,
-			DeathHazardScale:    1.0,
-			InfantHazardScale:   0.90,
-			SectorBirthScale:    map[string]float64{"Technology": 1.14, "Professional": 1.08},
-			PriorsBirth:         &LiteraturePriorsTable[2].Prior,
-			PriorsInfantDeath:   &LiteraturePriorsTable[1].Prior,
+			ID:                "startup_grants",
+			Name:              "Startup finance & first-year support",
+			Summary:           "Formation nudge + stronger first-year continuation.",
+			BudgetGBP:         3_800_000,
+			BirthScale:        1.10,
+			DeathHazardScale:  1.0,
+			InfantHazardScale: 0.90,
+			SectorBirthScale:  map[string]float64{"Technology": 1.14, "Professional": 1.08},
+			PriorsBirth:       &LiteraturePriorsTable[2].Prior,
+			PriorsInfantDeath: &LiteraturePriorsTable[1].Prior,
 		},
 		{
-			ID:      "incubator_ez",
-			Name:    "Incubator / enterprise-zone style",
-			Summary: "Place-based bias to tradable services & hospitality.",
-			BudgetGBP:         5_000_000,
-			BirthScale:        1.06,
-			DeathHazardScale:  0.97,
+			ID:               "incubator_ez",
+			Name:             "Incubator / enterprise-zone style",
+			Summary:          "Place-based bias to tradable services & hospitality.",
+			BudgetGBP:        5_000_000,
+			BirthScale:       1.06,
+			DeathHazardScale: 0.97,
 			SectorBirthScale: map[string]float64{
 				"Technology": 1.12, "Hospitality": 1.10, "Retail": 1.06,
 			},
-			PriorsBirth:  &LiteraturePriorsTable[2].Prior,
-			PriorsDeath:  &LiteraturePriorsTable[0].Prior,
+			PriorsBirth: &LiteraturePriorsTable[2].Prior,
+			PriorsDeath: &LiteraturePriorsTable[0].Prior,
 		},
 		{
-			ID:      "mentoring_resilience",
-			Name:    "Mentoring & peer resilience network",
-			Summary: "Broad hazard moderation; extra help through first year.",
-			BudgetGBP:          2_200_000,
-			BirthScale:         1.02,
-			DeathHazardScale:   0.94,
-			InfantHazardScale:  0.93,
-			PriorsDeath:        &LiteraturePriorsTable[3].Prior,
-			PriorsInfantDeath:  &LiteraturePriorsTable[3].Prior,
+			ID:                "mentoring_resilience",
+			Name:              "Mentoring & peer resilience network",
+			Summary:           "Broad hazard moderation; extra help through first year.",
+			BudgetGBP:         2_200_000,
+			BirthScale:        1.02,
+			DeathHazardScale:  0.94,
+			InfantHazardScale: 0.93,
+			PriorsDeath:       &LiteraturePriorsTable[3].Prior,
+			PriorsInfantDeath: &LiteraturePriorsTable[3].Prior,
 		},
 		{
-			ID:      "blend_balanced",
-			Name:    "Blended portfolio (relief + startup + mentoring)",
-			Summary: "Illustrative split budget: ~40% relief weighted, 35% startup, 25% mentoring (effect composition).",
-			BudgetGBP:          4_200_000,
-			BirthScale:         1.07,
-			DeathHazardScale:   0.91,
-			InfantHazardScale:  0.91,
-			SectorHazardScale:  map[string]float64{"Hospitality": 0.90},
-			SectorBirthScale:   map[string]float64{"Technology": 1.10},
+			ID:                "blend_balanced",
+			Name:              "Blended portfolio (relief + startup + mentoring)",
+			Summary:           "Illustrative split budget: ~40% relief weighted, 35% startup, 25% mentoring (effect composition).",
+			BudgetGBP:         4_200_000,
+			BirthScale:        1.07,
+			DeathHazardScale:  0.91,
+			InfantHazardScale: 0.91,
+			SectorHazardScale: map[string]float64{"Hospitality": 0.90},
+			SectorBirthScale:  map[string]float64{"Technology": 1.10},
 		},
 	}
 }

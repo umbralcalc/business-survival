@@ -282,9 +282,9 @@ func (s *SingleLAPopulationIteration) Iterate(
 			var moved float64
 			if s.deterministic {
 				moved = prev * pSurv
-		} else {
-			moved = s.binomialSample(prev, pSurv)
-		}
+			} else {
+				moved = s.binomialSample(prev, pSurv)
+			}
 			s.scratch[s.offset(sec, age)] += moved
 		}
 

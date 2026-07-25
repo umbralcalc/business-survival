@@ -33,9 +33,9 @@ func PortfolioParams(p Portfolio) map[string][]float64 {
 		infant = 1.0
 	}
 	out := map[string][]float64{
-		"policy_birth_scale":          {birth},
-		"policy_death_hazard_scale":   {death},
-		"policy_infant_hazard_scale":  {infant},
+		"policy_birth_scale":         {birth},
+		"policy_death_hazard_scale":  {death},
+		"policy_infant_hazard_scale": {infant},
 	}
 
 	n := len(SectorOrder)

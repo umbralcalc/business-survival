@@ -4,9 +4,9 @@ package policy
 type ScenarioLabel string
 
 const (
-	ScenarioBaseline   ScenarioLabel = "baseline"
-	ScenarioRecession  ScenarioLabel = "recession"
-	ScenarioExpansion  ScenarioLabel = "expansion"
+	ScenarioBaseline  ScenarioLabel = "baseline"
+	ScenarioRecession ScenarioLabel = "recession"
+	ScenarioExpansion ScenarioLabel = "expansion"
 )
 
 // AllScenarioLabels is the default evaluation set.

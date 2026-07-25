@@ -31,15 +31,15 @@ type BatchOutput struct {
 
 // Config drives a single-LA evaluation run.
 type Config struct {
-	PanelPath    string
-	BirthsPath   string
-	OnsPath      string
-	LACode       string
-	CohortYear   int
-	Runs         int
-	StockMonths  int
+	PanelPath     string
+	BirthsPath    string
+	OnsPath       string
+	LACode        string
+	CohortYear    int
+	Runs          int
+	StockMonths   int
 	BirthLookback int
-	CohortSize   float64
+	CohortSize    float64
 	Deterministic bool
 
 	ERate, EClaim, EDeath, EGDP float64

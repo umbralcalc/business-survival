@@ -29,27 +29,27 @@ const (
 )
 
 type hullParams struct {
-	AreaCode               string    `json:"area_code"`
-	AreaName               string    `json:"area_name"`
-	SectorOrder            []string  `json:"sector_order"`
-	SurvivalFracs          []float64 `json:"survival_fracs"`
-	SectorHazardScales     []float64 `json:"sector_hazard_scales"`
-	BaseBirthRates         []float64 `json:"base_birth_rates"`
-	CovariateBankRates     []float64 `json:"covariate_bank_rates"`
-	CovariateClaimants     []float64 `json:"covariate_claimants"`
-	RateRef                float64   `json:"rate_ref"`
-	ClaimantRef            float64   `json:"claimant_ref"`
-	BirthElasticityRate    float64   `json:"birth_elasticity_rate"`
-	BirthElasticityClaim   float64   `json:"birth_elasticity_claimant"`
-	DeathElasticityRate    float64   `json:"death_elasticity_rate"`
-	InitialStockPerSector  []float64 `json:"initial_stock_per_sector"`
-	CohortSize             float64   `json:"cohort_size"`
+	AreaCode              string    `json:"area_code"`
+	AreaName              string    `json:"area_name"`
+	SectorOrder           []string  `json:"sector_order"`
+	SurvivalFracs         []float64 `json:"survival_fracs"`
+	SectorHazardScales    []float64 `json:"sector_hazard_scales"`
+	BaseBirthRates        []float64 `json:"base_birth_rates"`
+	CovariateBankRates    []float64 `json:"covariate_bank_rates"`
+	CovariateClaimants    []float64 `json:"covariate_claimants"`
+	RateRef               float64   `json:"rate_ref"`
+	ClaimantRef           float64   `json:"claimant_ref"`
+	BirthElasticityRate   float64   `json:"birth_elasticity_rate"`
+	BirthElasticityClaim  float64   `json:"birth_elasticity_claimant"`
+	DeathElasticityRate   float64   `json:"death_elasticity_rate"`
+	InitialStockPerSector []float64 `json:"initial_stock_per_sector"`
+	CohortSize            float64   `json:"cohort_size"`
 }
 
 type panelDoc struct {
 	Authorities []struct {
-		AreaCode string                `json:"area_code"`
-		Rows     []calibrate.PanelRow  `json:"rows"`
+		AreaCode string               `json:"area_code"`
+		Rows     []calibrate.PanelRow `json:"rows"`
 	} `json:"authorities"`
 }
 

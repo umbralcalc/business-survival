@@ -185,11 +185,11 @@ func loadHullParams() {
 // struct cached at package init from policy.StandardPortfolios. Index
 // matches the Portfolio* constants.
 type portfolioMultipliers struct {
-	BirthScale         float64
-	DeathHazardScale   float64
-	InfantHazardScale  float64
-	SectorBirthScale   []float64 // length NSectors, 1 if absent
-	SectorHazardScale  []float64
+	BirthScale        float64
+	DeathHazardScale  float64
+	InfantHazardScale float64
+	SectorBirthScale  []float64 // length NSectors, 1 if absent
+	SectorHazardScale []float64
 }
 
 var portfolioTable []portfolioMultipliers
@@ -280,12 +280,12 @@ type LesliePopulationIteration struct {
 	rates         []float64
 	claimants     []float64
 
-	rateRef    float64
-	claimRef   float64
-	eRate      float64
-	eClaim     float64
-	eDeath     float64
-	baseBirth  []float64
+	rateRef   float64
+	claimRef  float64
+	eRate     float64
+	eClaim    float64
+	eDeath    float64
+	baseBirth []float64
 
 	poisson  distuv.Poisson
 	binomial distuv.Binomial
