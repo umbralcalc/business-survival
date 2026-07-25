@@ -5,7 +5,7 @@ go 1.25.2
 require (
 	github.com/go-echarts/go-echarts/v2 v2.6.3
 	github.com/umbralcalc/dexetera v0.0.0-20260516064554-a236901586b1
-	github.com/umbralcalc/stochadex v0.9.0
+	github.com/umbralcalc/stochadex v0.11.0
 	github.com/xuri/excelize/v2 v2.10.1
 	gonum.org/v1/gonum v0.17.0
 )

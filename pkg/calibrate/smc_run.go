@@ -3,10 +3,10 @@ package calibrate
 import (
 	"fmt"
 
-	"github.com/umbralcalc/stochadex/pkg/analysis"
+	"github.com/umbralcalc/stochadex/pkg/macros"
 )
 
-// RunSMCHazardScaleCalibration runs stochadex/pkg/analysis.RunSMCInference for
+// RunSMCHazardScaleCalibration runs stochadex/pkg/macros.RunSMCInference for
 // the hazard-scale model and returns posterior mean / std of the multiplier and
 // log marginal likelihood.
 func RunSMCHazardScaleCalibration(cfg SMCHazardScaleConfig) (mean, std, logMarg float64, err error) {
@@ -14,7 +14,7 @@ func RunSMCHazardScaleCalibration(cfg SMCHazardScaleConfig) (mean, std, logMarg 
 	if err != nil {
 		return 0, 0, 0, err
 	}
-	result := analysis.RunSMCInference(applied)
+	result := macros.RunSMCInference(applied)
 	if result == nil {
 		return 0, 0, 0, fmt.Errorf("calibrate: RunSMCInference returned nil (check particle / inner config)")
 	}

@@ -55,7 +55,7 @@ Everything else in the **full** question is **future work** (see §6) unless not
 - **Covariates:** Bank Rate and claimant count (panel) enter **log‑linear** birth and hazard scaling; optional GDP path; optional **distress** series (claimant volatility) scales hazard.
 - **Policies:** Portfolios map to `policy_*` parameters (global and per‑sector birth/hazard/“infant” hazard). **Displacement** optionally scales formation using neighbour mean births (`geo.AdjacentAuthorities`).
 - **Scenarios:** Observed rate/claimant paths are overlaid with stylised **recession** (tighter rates, higher claimants) or **expansion**.
-- **Inference:** **Moment matching** + pooled FD regression; **SMC** through **`analysis.RunSMCInference`** with **`inference.DataComparisonIteration`** (scalar hazard or bivariate survival+birth moments).
+- **Inference:** **Moment matching** + pooled FD regression; **SMC** through **`macros.RunSMCInference`** with **`inference.DataComparisonIteration`** (scalar hazard or bivariate survival+birth moments).
 
 ---
 

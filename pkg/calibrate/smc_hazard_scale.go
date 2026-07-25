@@ -3,10 +3,10 @@ package calibrate
 import (
 	"fmt"
 
-	"github.com/umbralcalc/stochadex/pkg/analysis"
-	"github.com/umbralcalc/stochadex/pkg/inference"
-	"github.com/umbralcalc/stochadex/pkg/simulator"
 	"github.com/umbralcalc/business-survival/pkg/population"
+	"github.com/umbralcalc/stochadex/pkg/inference"
+	"github.com/umbralcalc/stochadex/pkg/macros"
+	"github.com/umbralcalc/stochadex/pkg/simulator"
 )
 
 // SMCHazardScaleConfig holds options for one-dimensional SMC over a global
@@ -44,10 +44,10 @@ func validateSMCHazardScaleConfig(cfg SMCHazardScaleConfig) error {
 }
 
 // NewHazardScaleAppliedSMCInference returns an AppliedSMCInference wired for
-// stochadex/pkg/analysis.RunSMCInference using the hazard-scale inner model.
-func NewHazardScaleAppliedSMCInference(cfg SMCHazardScaleConfig) (analysis.AppliedSMCInference, error) {
+// stochadex/pkg/macros.RunSMCInference using the hazard-scale inner model.
+func NewHazardScaleAppliedSMCInference(cfg SMCHazardScaleConfig) (macros.AppliedSMCInference, error) {
 	if err := validateSMCHazardScaleConfig(cfg); err != nil {
-		return analysis.AppliedSMCInference{}, err
+		return macros.AppliedSMCInference{}, err
 	}
 	sigma := cfg.LikelihoodSigma
 	if sigma <= 0 {
@@ -57,8 +57,8 @@ func NewHazardScaleAppliedSMCInference(cfg SMCHazardScaleConfig) (analysis.Appli
 	target := cfg.Target5yr
 	surv := append([]float64(nil), cfg.SurvivalFracs...)
 
-	model := analysis.SMCParticleModel{
-		Build: func(N, nParams int) *analysis.SMCInnerSimConfig {
+	model := macros.SMCParticleModel{
+		Build: func(N, nParams int) *macros.SMCInnerSimConfig {
 			if nParams != 1 {
 				panic("calibrate: hazard-scale SMC expects nParams == 1")
 			}
@@ -109,7 +109,7 @@ func NewHazardScaleAppliedSMCInference(cfg SMCHazardScaleConfig) (analysis.Appli
 				forwarding[fwd+"/param_values"] = []int{p * nParams}
 			}
 
-			return &analysis.SMCInnerSimConfig{
+			return &macros.SMCInnerSimConfig{
 				Partitions: partitions,
 				Simulation: &simulator.SimulationConfig{
 					OutputCondition: &simulator.NilOutputCondition{},
@@ -126,7 +126,7 @@ func NewHazardScaleAppliedSMCInference(cfg SMCHazardScaleConfig) (analysis.Appli
 		},
 	}
 
-	return analysis.AppliedSMCInference{
+	return macros.AppliedSMCInference{
 		ProposalName:  "smc_proposals",
 		SimName:       "smc_sim",
 		PosteriorName: "smc_posterior",

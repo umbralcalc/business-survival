@@ -4,8 +4,8 @@ import (
 	"fmt"
 
 	"github.com/umbralcalc/business-survival/pkg/population"
-	"github.com/umbralcalc/stochadex/pkg/analysis"
 	"github.com/umbralcalc/stochadex/pkg/inference"
+	"github.com/umbralcalc/stochadex/pkg/macros"
 	"github.com/umbralcalc/stochadex/pkg/simulator"
 )
 
@@ -15,15 +15,15 @@ import (
 type SMCPopulationMomentsConfig struct {
 	SurvivalFracs []float64
 	// Target5yr and TargetMeanMonthlyBirths are observation means y.
-	Target5yr                 float64
-	TargetMeanMonthlyBirths   float64
-	BaseBirthRateScalar       float64
-	Sigma5yr, SigmaBirths     float64
-	NParticles, NRounds       int
+	Target5yr                    float64
+	TargetMeanMonthlyBirths      float64
+	BaseBirthRateScalar          float64
+	Sigma5yr, SigmaBirths        float64
+	NParticles, NRounds          int
 	HazardPriorLo, HazardPriorHi float64
 	BirthPriorLo, BirthPriorHi   float64
-	ProposalSeed uint64
-	Verbose      bool
+	ProposalSeed                 uint64
+	Verbose                      bool
 }
 
 func validateSMCPopulationMoments(cfg SMCPopulationMomentsConfig) error {
@@ -39,11 +39,11 @@ func validateSMCPopulationMoments(cfg SMCPopulationMomentsConfig) error {
 	return nil
 }
 
-// NewPopulationMomentsAppliedSMCInference builds analysis.AppliedSMCInference for the
+// NewPopulationMomentsAppliedSMCInference builds macros.AppliedSMCInference for the
 // hazard × birth moments model (two uniform priors, 2×2 diagonal Gaussian likelihood).
-func NewPopulationMomentsAppliedSMCInference(cfg SMCPopulationMomentsConfig) (analysis.AppliedSMCInference, error) {
+func NewPopulationMomentsAppliedSMCInference(cfg SMCPopulationMomentsConfig) (macros.AppliedSMCInference, error) {
 	if err := validateSMCPopulationMoments(cfg); err != nil {
-		return analysis.AppliedSMCInference{}, err
+		return macros.AppliedSMCInference{}, err
 	}
 	s1 := cfg.Sigma5yr
 	if s1 <= 0 {
@@ -59,8 +59,8 @@ func NewPopulationMomentsAppliedSMCInference(cfg SMCPopulationMomentsConfig) (an
 	data := []float64{cfg.Target5yr, cfg.TargetMeanMonthlyBirths}
 	targetCov := []float64{var1, 0, 0, var2} // 2×2 row-major for SymDense
 
-	model := analysis.SMCParticleModel{
-		Build: func(N, nParams int) *analysis.SMCInnerSimConfig {
+	model := macros.SMCParticleModel{
+		Build: func(N, nParams int) *macros.SMCInnerSimConfig {
 			if nParams != 2 {
 				panic("calibrate: population moments SMC expects nParams == 2")
 			}
@@ -74,9 +74,9 @@ func NewPopulationMomentsAppliedSMCInference(cfg SMCPopulationMomentsConfig) (an
 					Name:      fwd,
 					Iteration: &population.PopulationSurvivalBirthMomentsIteration{},
 					Params: simulator.NewParams(map[string][]float64{
-						"survival_fracs":          surv,
-						"base_birth_rate_scalar":  {cfg.BaseBirthRateScalar},
-						"param_values":            {1.0, 1.0},
+						"survival_fracs":         surv,
+						"base_birth_rate_scalar": {cfg.BaseBirthRateScalar},
+						"param_values":           {1.0, 1.0},
 					}),
 					InitStateValues:   []float64{0, 0},
 					StateHistoryDepth: 2,
@@ -106,7 +106,7 @@ func NewPopulationMomentsAppliedSMCInference(cfg SMCPopulationMomentsConfig) (an
 				loglikeParts[p] = ll
 				forwarding[fwd+"/param_values"] = []int{p*nParams + 0, p*nParams + 1}
 			}
-			return &analysis.SMCInnerSimConfig{
+			return &macros.SMCInnerSimConfig{
 				Partitions: partitions,
 				Simulation: &simulator.SimulationConfig{
 					OutputCondition: &simulator.NilOutputCondition{},
@@ -123,7 +123,7 @@ func NewPopulationMomentsAppliedSMCInference(cfg SMCPopulationMomentsConfig) (an
 		},
 	}
 
-	return analysis.AppliedSMCInference{
+	return macros.AppliedSMCInference{
 		ProposalName:  "smc_mom_proposals",
 		SimName:       "smc_mom_sim",
 		PosteriorName: "smc_mom_posterior",
@@ -147,7 +147,7 @@ func RunSMCPopulationMomentsCalibration(cfg SMCPopulationMomentsConfig) (hazardM
 	if err != nil {
 		return 0, 0, 0, 0, 0, err
 	}
-	result := analysis.RunSMCInference(applied)
+	result := macros.RunSMCInference(applied)
 	if result == nil {
 		return 0, 0, 0, 0, 0, fmt.Errorf("calibrate: RunSMCInference returned nil")
 	}

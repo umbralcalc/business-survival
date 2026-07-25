@@ -6,7 +6,7 @@ import (
 	"testing"
 
 	"github.com/umbralcalc/business-survival/pkg/population"
-	"github.com/umbralcalc/stochadex/pkg/analysis"
+	"github.com/umbralcalc/stochadex/pkg/macros"
 	"github.com/umbralcalc/stochadex/pkg/simulator"
 	"gonum.org/v1/gonum/floats/scalar"
 )
@@ -52,25 +52,25 @@ func TestSMCPopulationMoments_RecoversNearUnity(t *testing.T) {
 	truth := mom.Iterate(&simulator.Params{Map: mMap}, 0, nil, nil)
 
 	applied, err := NewPopulationMomentsAppliedSMCInference(SMCPopulationMomentsConfig{
-		SurvivalFracs:              surv,
-		Target5yr:                  truth[0],
-		TargetMeanMonthlyBirths:    truth[1],
-		BaseBirthRateScalar:        baseBirth,
-		Sigma5yr:                   0.04,
-		SigmaBirths:                15,
-		NParticles:                 80,
-		NRounds:                    4,
-		HazardPriorLo:              0.4,
-		HazardPriorHi:              2.0,
-		BirthPriorLo:               0.4,
-		BirthPriorHi:               2.0,
-		ProposalSeed:               202,
-		Verbose:                    false,
+		SurvivalFracs:           surv,
+		Target5yr:               truth[0],
+		TargetMeanMonthlyBirths: truth[1],
+		BaseBirthRateScalar:     baseBirth,
+		Sigma5yr:                0.04,
+		SigmaBirths:             15,
+		NParticles:              80,
+		NRounds:                 4,
+		HazardPriorLo:           0.4,
+		HazardPriorHi:           2.0,
+		BirthPriorLo:            0.4,
+		BirthPriorHi:            2.0,
+		ProposalSeed:            202,
+		Verbose:                 false,
 	})
 	if err != nil {
 		t.Fatal(err)
 	}
-	result := analysis.RunSMCInference(applied)
+	result := macros.RunSMCInference(applied)
 	if result == nil {
 		t.Fatal("nil SMC result")
 	}

@@ -4,7 +4,7 @@ import (
 	"math"
 	"testing"
 
-	"github.com/umbralcalc/stochadex/pkg/analysis"
+	"github.com/umbralcalc/stochadex/pkg/macros"
 	"gonum.org/v1/gonum/floats/scalar"
 )
 
@@ -25,7 +25,7 @@ func TestSMC_HazardScaleRecoversUnity(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	result := analysis.RunSMCInference(applied)
+	result := macros.RunSMCInference(applied)
 	if result == nil {
 		t.Fatal("RunSMCInference returned nil")
 	}
