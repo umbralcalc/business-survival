@@ -55,6 +55,8 @@ github.com/umbralcalc/dexetera v0.0.0-20260516064554-a236901586b1 h1:Iw5GdCGQWrq
 github.com/umbralcalc/dexetera v0.0.0-20260516064554-a236901586b1/go.mod h1:jlE+LR0k6vX5KDHC/i604+1iAw1/plFV8/BK7NnnBuQ=
 github.com/umbralcalc/stochadex v0.11.0 h1:6TXmP2jj6+VSabFWv/CJm0PSbbwEcFk2v4aJB3AMITc=
 github.com/umbralcalc/stochadex v0.11.0/go.mod h1:ziiqX1xwYlQlq/B1rHct0Kv/VA337NAbfFktXlk3sXs=
+github.com/umbralcalc/stochadex v0.12.0 h1:SXYfvfNA54GSIuTqVBzR/Dv0Reb5LWkQ88JsvzU3czg=
+github.com/umbralcalc/stochadex v0.12.0/go.mod h1:ziiqX1xwYlQlq/B1rHct0Kv/VA337NAbfFktXlk3sXs=
 github.com/xuri/efp v0.0.1 h1:fws5Rv3myXyYni8uwj2qKjVaRP30PdjeYe2Y6FDsCL8=
 github.com/xuri/efp v0.0.1/go.mod h1:ybY/Jr0T0GTCnYjKqmdwxyxn2BQf2RcQIIvex5QldPI=
 github.com/xuri/excelize/v2 v2.10.1 h1:V62UlqopMqha3kOpnlHy2CcRVw1V8E63jFoWUmMzxN0=

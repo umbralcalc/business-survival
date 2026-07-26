@@ -58,19 +58,14 @@ func NewHazardScaleAppliedSMCInference(cfg SMCHazardScaleConfig) (macros.Applied
 	surv := append([]float64(nil), cfg.SurvivalFracs...)
 
 	model := macros.SMCParticleModel{
-		Build: func(N, nParams int) *macros.SMCInnerSimConfig {
+		Build: func(nParams int) *macros.SMCInnerSimConfig {
 			if nParams != 1 {
 				panic("calibrate: hazard-scale SMC expects nParams == 1")
 			}
-			partitions := make([]*simulator.PartitionConfig, 0, 2*N)
-			loglikeParts := make([]string, N)
-			forwarding := make(map[string][]int)
-
-			for p := 0; p < N; p++ {
-				fwd := fmt.Sprintf("fwd_%d", p)
-				ll := fmt.Sprintf("ll_%d", p)
-
-				partitions = append(partitions, &simulator.PartitionConfig{
+			const fwd = "fwd"
+			const ll = "ll"
+			partitions := []*simulator.PartitionConfig{
+				{
 					Name:      fwd,
 					Iteration: &population.ScaledCohortSurvivalIteration{},
 					Params: simulator.NewParams(map[string][]float64{
@@ -79,10 +74,9 @@ func NewHazardScaleAppliedSMCInference(cfg SMCHazardScaleConfig) (macros.Applied
 					}),
 					InitStateValues:   []float64{0},
 					StateHistoryDepth: 2,
-					Seed:              uint64(9000 + p),
-				})
-
-				partitions = append(partitions, &simulator.PartitionConfig{
+					Seed:              9000,
+				},
+				{
 					Name: ll,
 					Iteration: &inference.DataComparisonIteration{
 						Likelihood: &inference.NormalLikelihoodDistribution{
@@ -102,12 +96,10 @@ func NewHazardScaleAppliedSMCInference(cfg SMCHazardScaleConfig) (macros.Applied
 					},
 					InitStateValues:   []float64{0},
 					StateHistoryDepth: 2,
-					Seed:              uint64(9100 + p),
-				})
-
-				loglikeParts[p] = ll
-				forwarding[fwd+"/param_values"] = []int{p * nParams}
+					Seed:              9100,
+				},
 			}
+			forwarding := map[string][]int{fwd + "/param_values": {0}}
 
 			return &macros.SMCInnerSimConfig{
 				Partitions: partitions,
@@ -120,8 +112,8 @@ func NewHazardScaleAppliedSMCInference(cfg SMCHazardScaleConfig) (macros.Applied
 					TimestepFunction: &simulator.ConstantTimestepFunction{Stepsize: 1},
 					InitTimeValue:    0,
 				},
-				LoglikePartitions: loglikeParts,
-				ParamForwarding:   forwarding,
+				LoglikePartition: ll,
+				ParamForwarding:  forwarding,
 			}
 		},
 	}

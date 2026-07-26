@@ -60,17 +60,14 @@ func NewPopulationMomentsAppliedSMCInference(cfg SMCPopulationMomentsConfig) (ma
 	targetCov := []float64{var1, 0, 0, var2} // 2×2 row-major for SymDense
 
 	model := macros.SMCParticleModel{
-		Build: func(N, nParams int) *macros.SMCInnerSimConfig {
+		Build: func(nParams int) *macros.SMCInnerSimConfig {
 			if nParams != 2 {
 				panic("calibrate: population moments SMC expects nParams == 2")
 			}
-			partitions := make([]*simulator.PartitionConfig, 0, 2*N)
-			loglikeParts := make([]string, N)
-			forwarding := make(map[string][]int)
-			for p := 0; p < N; p++ {
-				fwd := fmt.Sprintf("mom_%d", p)
-				ll := fmt.Sprintf("llm_%d", p)
-				partitions = append(partitions, &simulator.PartitionConfig{
+			const fwd = "mom"
+			const ll = "llm"
+			partitions := []*simulator.PartitionConfig{
+				{
 					Name:      fwd,
 					Iteration: &population.PopulationSurvivalBirthMomentsIteration{},
 					Params: simulator.NewParams(map[string][]float64{
@@ -80,9 +77,9 @@ func NewPopulationMomentsAppliedSMCInference(cfg SMCPopulationMomentsConfig) (ma
 					}),
 					InitStateValues:   []float64{0, 0},
 					StateHistoryDepth: 2,
-					Seed:              uint64(7000 + p),
-				})
-				partitions = append(partitions, &simulator.PartitionConfig{
+					Seed:              7000,
+				},
+				{
 					Name: ll,
 					Iteration: &inference.DataComparisonIteration{
 						Likelihood: &inference.NormalLikelihoodDistribution{
@@ -101,11 +98,10 @@ func NewPopulationMomentsAppliedSMCInference(cfg SMCPopulationMomentsConfig) (ma
 					},
 					InitStateValues:   []float64{0},
 					StateHistoryDepth: 2,
-					Seed:              uint64(7100 + p),
-				})
-				loglikeParts[p] = ll
-				forwarding[fwd+"/param_values"] = []int{p*nParams + 0, p*nParams + 1}
+					Seed:              7100,
+				},
 			}
+			forwarding := map[string][]int{fwd + "/param_values": {0, 1}}
 			return &macros.SMCInnerSimConfig{
 				Partitions: partitions,
 				Simulation: &simulator.SimulationConfig{
@@ -117,8 +113,8 @@ func NewPopulationMomentsAppliedSMCInference(cfg SMCPopulationMomentsConfig) (ma
 					TimestepFunction: &simulator.ConstantTimestepFunction{Stepsize: 1},
 					InitTimeValue:    0,
 				},
-				LoglikePartitions: loglikeParts,
-				ParamForwarding:   forwarding,
+				LoglikePartition: ll,
+				ParamForwarding:  forwarding,
 			}
 		},
 	}
